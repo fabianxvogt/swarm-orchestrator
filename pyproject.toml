@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "swarm"
+version = "0.1.0"
+description = "Lab-notebook orchestrator for parallel AI coding-agent subagents"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Fabian Vogt" }]
+
+[project.scripts]
+swarm = "swarm.orchestrator:main"
+
+[tool.setuptools]
+packages = ["swarm"]
