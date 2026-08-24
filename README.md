@@ -18,7 +18,7 @@ cross-project connections than sequential single-agent sessions?
   `.env` files, service-account keys) is enforced on every mission brief and
   working directory before dispatch. Missions are read-only by default; write
   missions are restricted to an explicit allowlist.
-- **Auditable**: every dispatch, raw result, and parsed finding lands in
+- **Auditable**: every dispatch, raw result, retry, and parsed finding lands in
   `runs/<timestamp>/<agent>.jsonl`. Curated findings flow into
   `ideas/INBOX.md` and `ideas/CONNECTIONS.md` using their existing templates.
 
@@ -102,6 +102,8 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
    runs' pid records, SIGINT/SIGTERM graceful shutdown.
 5. `--auto` (permission auto-approval) is off by default and only ever passed
    for write missions.
+6. A successful backend response with an absent or malformed FINDING block gets
+   one bounded retry; failed and timed-out responses are not retried.
 
 ## Status
 

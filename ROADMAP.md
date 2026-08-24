@@ -6,7 +6,6 @@
 
 - Long-run validation: one real 2–4 hour session (`swarm run --hours 2
   --parallel 8 --interval-min 20`) and a review of notebook quality.
-- Tune the FINDING block: agents occasionally omit it; add retry-on-missing.
 
 ## Next
 
@@ -20,6 +19,10 @@
   and write up results — see ideas/INBOX.md "Swarm-emergence lab".
 
 ## Done
+
+- 2026-08-25: successful backend responses without a parseable FINDING block
+  receive one bounded retry with an explicit machine-readable reminder; failed
+  and timed-out responses remain single-attempt. [EMPIRICAL runner regression]
 
 - 2026-08-25: added bounded read-only `swarm status`, summarizing the newest
   run notebooks by wave with dispatch, finding, failure, malformed-record, and

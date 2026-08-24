@@ -18,6 +18,12 @@ from .registry import Project
 
 STOP = threading.Event()
 MARKER = "swarm-orchestrator-agent"
+FINDING_RETRY = """
+The previous response did not contain a parseable FINDING block. Retry the same
+mission and finish with exactly one complete machine-readable block containing
+non-empty TITLE and CLAIM fields. Keep the claim labeled FORMAL, EMPIRICAL,
+REPORTED, or SPECULATIVE.
+""".strip()
 
 
 def install_signal_handlers() -> None:
@@ -90,10 +96,46 @@ def dispatch(
             "returncode": result.returncode,
             "timed_out": result.timed_out,
             "stdout_chars": len(result.stdout),
+            "attempt": 1,
         },
     )
     finding = parse_finding(result.stdout)
-    notebook.log(agent, "finding", finding.__dict__ if finding else None)
+    notebook.log(
+        agent,
+        "finding",
+        {**finding.__dict__, "attempt": 1} if finding else None,
+    )
+    if result.ok and finding is None and not STOP.is_set():
+        notebook.log(
+            agent,
+            "retry",
+            {"reason": "missing_or_malformed_finding", "attempt": 2},
+        )
+        retry_result = run_agent(
+            backend=config.backend,
+            brief=f"{mission.brief}\n\n{FINDING_RETRY}",
+            cwd=config.workdir,
+            timeout_s=config.timeout_s,
+            model=config.model,
+            auto=auto,
+        )
+        notebook.log(
+            agent,
+            "result",
+            {
+                "returncode": retry_result.returncode,
+                "timed_out": retry_result.timed_out,
+                "stdout_chars": len(retry_result.stdout),
+                "attempt": 2,
+            },
+        )
+        finding = parse_finding(retry_result.stdout)
+        notebook.log(
+            agent,
+            "finding",
+            {**finding.__dict__, "attempt": 2} if finding else None,
+        )
+        return retry_result.ok, finding
     return result.ok, finding
 
 

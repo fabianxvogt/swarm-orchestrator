@@ -40,6 +40,94 @@ def test_failed_or_timed_out_child_finding_is_not_collected(
     assert len(calls) == 1
 
 
+def test_dispatch_retries_once_when_finding_is_missing(monkeypatch, tmp_path):
+    calls = []
+    outputs = [
+        BackendResult(0, "useful prose without the required block", False),
+        BackendResult(
+            0,
+            "===FINDING===\nTITLE: recovered\nCLAIM: EMPIRICAL: retry works\n",
+            False,
+        ),
+    ]
+
+    def fake_run_agent(**kwargs):
+        calls.append(kwargs)
+        return outputs.pop(0)
+
+    monkeypatch.setattr(runner, "run_agent", fake_run_agent)
+    notebook = Notebook(tmp_path / "run")
+    config = SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path))
+    mission = Mission("EXPLORE", "toy-projects/rule30", None, "brief")
+
+    ok, finding = runner.dispatch(mission, "agent-1", notebook, config)
+
+    assert ok is True
+    assert finding is not None
+    assert finding.title == "recovered"
+    assert len(calls) == 2
+    assert "parseable FINDING block" in calls[1]["brief"]
+    assert [entry["type"] for entry in notebook.entries("agent-1")] == [
+        "dispatch",
+        "result",
+        "finding",
+        "retry",
+        "result",
+        "finding",
+    ]
+
+
+def test_dispatch_retry_is_bounded_when_finding_stays_malformed(monkeypatch, tmp_path):
+    calls = []
+
+    def fake_run_agent(**kwargs):
+        calls.append(kwargs)
+        return BackendResult(0, "still no finding", False)
+
+    monkeypatch.setattr(runner, "run_agent", fake_run_agent)
+    notebook = Notebook(tmp_path / "run")
+    config = SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path))
+    mission = Mission("EXPLORE", "toy-projects/rule30", None, "brief")
+
+    ok, finding = runner.dispatch(mission, "agent-1", notebook, config)
+
+    assert ok is True
+    assert finding is None
+    assert len(calls) == 2
+    retries = [
+        entry for entry in notebook.entries("agent-1") if entry["type"] == "retry"
+    ]
+    assert len(retries) == 1
+    assert retries[0]["payload"] == {
+        "reason": "missing_or_malformed_finding",
+        "attempt": 2,
+    }
+
+
+def test_dispatch_does_not_retry_parseable_finding(monkeypatch, tmp_path):
+    calls = []
+
+    def fake_run_agent(**kwargs):
+        calls.append(kwargs)
+        return BackendResult(
+            0,
+            "===FINDING===\nTITLE: direct\nCLAIM: EMPIRICAL: already complete\n",
+            False,
+        )
+
+    monkeypatch.setattr(runner, "run_agent", fake_run_agent)
+    config = SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path))
+    mission = Mission("EXPLORE", "toy-projects/rule30", None, "brief")
+
+    ok, finding = runner.dispatch(
+        mission, "agent-1", Notebook(tmp_path / "run"), config
+    )
+
+    assert ok is True
+    assert finding is not None
+    assert len(calls) == 1
+
+
 def test_wave_dispatches_at_most_one_primary_mission_per_project(tmp_path):
     swarm = runner.Swarm(
         SwarmConfig(parallel=8, backend="echo", workdir=str(tmp_path)),
