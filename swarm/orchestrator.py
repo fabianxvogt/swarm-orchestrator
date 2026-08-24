@@ -7,7 +7,7 @@ from pathlib import Path
 
 from . import safety
 from .config import SwarmConfig, load_config
-from .findings import append_to_connections, append_to_inbox
+from .findings import Finding, append_to_connections, append_to_inbox, prepare_findings
 from .notebook import Notebook
 from .registry import apply_filters, load_registry
 from .runner import Swarm, install_signal_handlers, reap_stale
@@ -134,8 +134,8 @@ def _effective_config(args: argparse.Namespace) -> SwarmConfig:
     return config
 
 
-def _publish(findings: list) -> None:
-    for finding in findings:
+def _publish(findings: list[Finding]) -> None:
+    for finding in prepare_findings(findings):
         try:
             if finding.is_connection:
                 append_to_connections(finding, CONNECTIONS)

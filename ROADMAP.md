@@ -10,7 +10,6 @@
 
 ## Next
 
-- Finding dedup + rating before publishing to INBOX/CONNECTIONS (avoid swarm echo).
 - Per-agent concurrency limits per project (don't send two agents into one repo).
 - `swarm status` command summarizing runs/, findings per wave, cost estimate.
 - Optional git commit-per-finding provenance for BUILD missions (opt-in).
@@ -24,6 +23,9 @@
 
 ## Done
 
+- 2026-08-24: findings are normalized and deduplicated before publication;
+  duplicate copies retain the highest deterministic quality rating. [EMPIRICAL
+  publication regression]
 - 2026-08-22: canonicalized paths before deny matching and added a symlink-target regression probe; full pytest remains unavailable in the environment.
 
 - 2026-08-22: failed and timed-out child findings are now excluded from publication; focused writer-agent suite reports 38 passing tests. [EMPIRICAL safety regression]

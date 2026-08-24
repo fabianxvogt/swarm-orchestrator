@@ -9,6 +9,7 @@ from swarm.config import SwarmConfig
 from swarm.missions import Mission
 from swarm.notebook import Notebook
 from swarm.registry import Project
+from swarm.orchestrator import _publish
 
 FINDING_OUTPUT = """===FINDING===
 TITLE: Failed child finding
@@ -59,3 +60,20 @@ def test_dispatch_rejects_denied_workdir_before_backend(monkeypatch, tmp_path):
         )
 
     assert called is False
+
+
+def test_publication_deduplicates_before_writing(monkeypatch):
+    published = []
+
+    def fake_append(finding, path):
+        published.append(finding)
+
+    monkeypatch.setattr("swarm.orchestrator.append_to_inbox", fake_append)
+    first = runner.Finding("Echo", "idea", ["p"], "EMPIRICAL: claim", None)
+    duplicate = runner.Finding(
+        " echo ", "idea", ["p"], " empirical: claim ", "run it"
+    )
+
+    _publish([first, duplicate])
+
+    assert published == [duplicate]

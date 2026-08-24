@@ -6,7 +6,10 @@ from swarm.findings import (
     Finding,
     append_to_connections,
     append_to_inbox,
+    finding_fingerprint,
     parse_finding,
+    prepare_findings,
+    rate_finding,
 )
 from swarm.notebook import Notebook
 
@@ -29,6 +32,32 @@ class TestFindingParsing:
 
 
 class TestPublishing:
+    def test_rating_prefers_complete_duplicate(self):
+        weak = Finding(
+            title="Echo",
+            type="idea",
+            projects=["p1"],
+            claim="EMPIRICAL: same claim",
+            experiment=None,
+        )
+        strong = Finding(
+            title=" echo ",
+            type="IDEA",
+            projects=["p1"],
+            claim=" empirical: same   claim ",
+            experiment="run it",
+        )
+
+        assert finding_fingerprint(weak) == finding_fingerprint(strong)
+        assert rate_finding(strong) > rate_finding(weak)
+        assert prepare_findings([weak, strong]) == [strong]
+
+    def test_connection_project_order_does_not_duplicate(self):
+        first = Finding("Link", "connection", ["a", "b"], "claim", None)
+        reverse = Finding("link", "connection", ["b", "a"], "claim", None)
+
+        assert prepare_findings([first, reverse]) == [first]
+
     def test_append_to_inbox_uses_template(self, tmp_path):
         inbox = tmp_path / "INBOX.md"
         inbox.write_text("# Idea Inbox\n\n---\n", encoding="utf-8")

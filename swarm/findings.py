@@ -4,7 +4,7 @@ import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Iterable, Optional
 
 
 @dataclass(frozen=True)
@@ -28,6 +28,63 @@ FIELD = {
     "CLAIM": "claim",
     "EXPERIMENT": "experiment",
 }
+CLAIM_LABEL = re.compile(r"^(FORMAL|EMPIRICAL|REPORTED|SPECULATIVE)\s*:", re.I)
+
+
+def rate_finding(finding: Finding) -> int:
+    """Return a deterministic 0–5 publication quality rating.
+
+    Ratings are used to choose the strongest copy when agents emit the same
+    finding. They are not a minimum-quality gate, so a unique finding keeps
+    the pre-existing publication behavior.
+    """
+    score = 0
+    if _normalize(finding.title):
+        score += 1
+    if _normalize(finding.claim):
+        score += 1
+    if CLAIM_LABEL.match(finding.claim.strip()):
+        score += 1
+    if _normalize(finding.experiment or ""):
+        score += 1
+    required_projects = 2 if finding.is_connection else 1
+    if len(_project_names(finding)) >= required_projects:
+        score += 1
+    return score
+
+
+def finding_fingerprint(finding: Finding) -> tuple[str, str, str, tuple[str, ...]]:
+    """Return a whitespace/case-normalized identity for one finding.
+
+    Project order is ignored because connection agents can report the same
+    link from opposite directions. Punctuation and wording remain significant
+    to avoid collapsing distinct hypotheses through fuzzy matching.
+    """
+    return (
+        _normalize(finding.type) or "note",
+        _normalize(finding.title),
+        _normalize(finding.claim),
+        tuple(sorted(_project_names(finding))),
+    )
+
+
+def prepare_findings(findings: Iterable[Finding]) -> list[Finding]:
+    """Deduplicate findings, retaining the highest-rated copy per identity."""
+    selected: dict[tuple[str, str, str, tuple[str, ...]], Finding] = {}
+    for finding in findings:
+        key = finding_fingerprint(finding)
+        previous = selected.get(key)
+        if previous is None or rate_finding(finding) > rate_finding(previous):
+            selected[key] = finding
+    return list(selected.values())
+
+
+def _normalize(value: str) -> str:
+    return re.sub(r"\s+", " ", value).strip().casefold()
+
+
+def _project_names(finding: Finding) -> set[str]:
+    return {_normalize(project) for project in finding.projects if _normalize(project)}
 
 
 def parse_finding(output: str) -> Finding | None:
