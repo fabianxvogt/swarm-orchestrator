@@ -6,6 +6,7 @@ import subprocess
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from pathlib import Path
 
 from . import safety
@@ -24,6 +25,143 @@ mission and finish with exactly one complete machine-readable block containing
 non-empty TITLE and CLAIM fields. Keep the claim labeled FORMAL, EMPIRICAL,
 REPORTED, or SPECULATIVE.
 """.strip()
+
+
+class ProvenanceError(Exception):
+    """Raised when an opt-in BUILD provenance commit cannot be made safely."""
+
+
+@dataclass(frozen=True)
+class GitSnapshot:
+    root: Path
+    project_dir: Path
+    head: str
+
+
+def _git(cwd: Path, *args: str) -> str:
+    try:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError as exc:
+        raise ProvenanceError(f"git unavailable: {exc}") from exc
+    if result.returncode:
+        detail = result.stderr.strip() or result.stdout.strip() or "unknown git error"
+        raise ProvenanceError(f"git {' '.join(args)} failed: {detail}")
+    return result.stdout
+
+
+def _provenance_snapshot(mission: Mission, config: SwarmConfig) -> GitSnapshot | None:
+    if not config.commit_per_finding or mission.kind != "BUILD":
+        return None
+
+    project_dir = (Path(config.workdir).expanduser() / mission.project).resolve()
+    safety.check_path(str(project_dir), write=True)
+    root = Path(
+        _git(project_dir, "rev-parse", "--show-toplevel").strip()
+    ).resolve()
+    safety.check_path(str(root), write=True)
+    try:
+        project_dir.relative_to(root)
+    except ValueError as exc:
+        raise ProvenanceError("BUILD project is outside its git worktree") from exc
+
+    status = _git(root, "status", "--porcelain=v1", "-z")
+    if status:
+        raise ProvenanceError("refusing provenance commit: worktree is not clean")
+    head = _git(root, "rev-parse", "HEAD").strip()
+    if not head:
+        raise ProvenanceError("refusing provenance commit: repository has no HEAD")
+    return GitSnapshot(root=root, project_dir=project_dir, head=head)
+
+
+def _changed_paths(root: Path) -> list[str]:
+    raw = _git(root, "status", "--porcelain=v1", "-z")
+    paths: list[str] = []
+    entries = raw.split("\0")
+    for entry in entries:
+        if not entry:
+            continue
+        if len(entry) < 4:
+            raise ProvenanceError("git returned a malformed status record")
+        code, path = entry[:2], entry[3:]
+        if "R" in code or "C" in code:
+            raise ProvenanceError("refusing provenance commit for rename or copy")
+        paths.append(path)
+    return paths
+
+
+def _commit_message(title: str) -> str:
+    cleaned = "".join(char for char in " ".join(title.split()) if char.isprintable())
+    return f"swarm: {cleaned or 'BUILD finding'}"[:72]
+
+
+def _unstage_paths(root: Path, paths: list[str]) -> None:
+    try:
+        _git(root, "reset", "--", *paths)
+    except ProvenanceError as exc:
+        raise ProvenanceError(
+            f"provenance commit failed and staged changes could not be cleared: {exc}"
+        ) from exc
+
+
+def _commit_provenance(snapshot: GitSnapshot, finding: Finding) -> str:
+    current_head = _git(snapshot.root, "rev-parse", "HEAD").strip()
+    if current_head != snapshot.head:
+        raise ProvenanceError("refusing provenance commit: HEAD changed during BUILD")
+
+    paths = _changed_paths(snapshot.root)
+    if not paths:
+        raise ProvenanceError("BUILD finding produced no git changes")
+    safe_paths: list[str] = []
+    for path in paths:
+        candidate = (snapshot.root / path).resolve()
+        try:
+            candidate.relative_to(snapshot.project_dir)
+        except ValueError as exc:
+            raise ProvenanceError(
+                "BUILD changed a path outside the target project"
+            ) from exc
+        safety.check_path(str(candidate), write=True)
+        safe_paths.append(path)
+
+    staged = True
+    try:
+        _git(snapshot.root, "add", "--", *safe_paths)
+        if not _git(snapshot.root, "diff", "--cached", "--name-only", "-z"):
+            raise ProvenanceError("BUILD finding produced no staged changes")
+        _git(snapshot.root, "commit", "-m", _commit_message(finding.title))
+    except ProvenanceError:
+        if staged:
+            _unstage_paths(snapshot.root, safe_paths)
+        raise
+    return _git(snapshot.root, "rev-parse", "HEAD").strip()
+
+
+def _record_provenance(
+    mission: Mission,
+    finding: Finding | None,
+    result_ok: bool,
+    snapshot: GitSnapshot | None,
+    agent: str,
+    notebook: Notebook,
+) -> None:
+    if snapshot is None or not result_ok or finding is None:
+        return
+    try:
+        commit = _commit_provenance(snapshot, finding)
+    except (ProvenanceError, safety.SafetyViolation) as exc:
+        notebook.log(agent, "provenance_failed", {"error": str(exc)})
+        return
+    notebook.log(
+        agent,
+        "provenance_commit",
+        {"kind": mission.kind, "project": mission.project, "commit": commit},
+    )
 
 
 def install_signal_handlers() -> None:
@@ -68,6 +206,14 @@ def dispatch(
     if STOP.is_set():
         return False, None
     safety.check_path(config.workdir, write=mission.writable)
+    if mission.kind == "BUILD":
+        safety.check_build_allowed(mission.project, config.build_allowlist)
+        safety.check_path(mission.project, write=True)
+    try:
+        snapshot = _provenance_snapshot(mission, config)
+    except (ProvenanceError, safety.SafetyViolation) as exc:
+        notebook.log(agent, "provenance_blocked", {"error": str(exc)})
+        return False, None
     auto = config.auto_approve and mission.writable
     notebook.log(
         agent,
@@ -135,7 +281,16 @@ def dispatch(
             "finding",
             {**finding.__dict__, "attempt": 2} if finding else None,
         )
+        _record_provenance(
+            mission,
+            finding,
+            retry_result.ok,
+            snapshot,
+            agent,
+            notebook,
+        )
         return retry_result.ok, finding
+    _record_provenance(mission, finding, result.ok, snapshot, agent, notebook)
     return result.ok, finding
 
 

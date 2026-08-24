@@ -9,7 +9,8 @@
 
 ## Next
 
-- Optional git commit-per-finding provenance for BUILD missions (opt-in).
+- No additional implementation gap is scheduled; long-run validation remains in
+  Now.
 
 ## Later
 
@@ -19,6 +20,11 @@
   and write up results — see ideas/INBOX.md "Swarm-emergence lab".
 
 ## Done
+
+- 2026-08-25: added opt-in local git commit provenance for successful BUILD
+  findings. It is disabled by default, requires a clean target worktree, stages
+  only post-dispatch safe paths, clears staging when a commit fails, and never
+  pushes. [EMPIRICAL safety regression]
 
 - 2026-08-25: successful backend responses without a parseable FINDING block
   receive one bounded retry with an explicit machine-readable reminder; failed

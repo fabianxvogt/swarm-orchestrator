@@ -60,6 +60,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="allow write missions (DOCUMENT/BUILD) to auto-approve permissions",
     )
     run.add_argument(
+        "--commit-per-finding",
+        action="store_true",
+        help="opt in to local commits for successful BUILD findings",
+    )
+    run.add_argument(
         "--once", action="store_true", help="run exactly one wave and exit"
     )
     run.add_argument(
@@ -160,6 +165,8 @@ def _effective_config(args: argparse.Namespace) -> SwarmConfig:
         config.model = args.model
     if args.auto:
         config.auto_approve = True
+    if args.commit_per_finding:
+        config.commit_per_finding = True
     return config
 
 

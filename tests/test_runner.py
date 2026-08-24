@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import subprocess
+
 import pytest
 
 from swarm import safety
@@ -126,6 +128,140 @@ def test_dispatch_does_not_retry_parseable_finding(monkeypatch, tmp_path):
     assert ok is True
     assert finding is not None
     assert len(calls) == 1
+
+
+def _init_git_repo(path):
+    path.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=path, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"], cwd=path, check=True
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test User"], cwd=path, check=True
+    )
+    (path / "README.md").write_text("clean\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=path, check=True)
+    subprocess.run(["git", "commit", "-qm", "initial"], cwd=path, check=True)
+
+
+def test_build_finding_can_opt_in_to_a_local_provenance_commit(monkeypatch, tmp_path):
+    project = tmp_path / "project"
+    _init_git_repo(project)
+
+    def fake_run_agent(**kwargs):
+        (project / "change.txt").write_text("agent change\n", encoding="utf-8")
+        return BackendResult(
+            0,
+            "===FINDING===\nTITLE: Safe build\nCLAIM: EMPIRICAL: it works\n",
+            False,
+        )
+
+    monkeypatch.setattr(runner, "run_agent", fake_run_agent)
+    notebook = Notebook(tmp_path / "run")
+    config = SwarmConfig(
+        parallel=5,
+        backend="echo",
+        workdir=str(tmp_path),
+        build_allowlist=["project"],
+        commit_per_finding=True,
+    )
+
+    ok, finding = runner.dispatch(
+        Mission("BUILD", "project", None, "brief"),
+        "agent-1",
+        notebook,
+        config,
+    )
+
+    assert ok is True
+    assert finding is not None
+    message = subprocess.run(
+        ["git", "log", "-1", "--format=%s"],
+        cwd=project,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert message == "swarm: Safe build"
+    assert (project / "change.txt").read_text(encoding="utf-8") == "agent change\n"
+    assert [entry["type"] for entry in notebook.entries("agent-1")][-1] == (
+        "provenance_commit"
+    )
+
+
+def test_build_provenance_refuses_a_dirty_worktree_before_backend(monkeypatch, tmp_path):
+    project = tmp_path / "project"
+    _init_git_repo(project)
+    (project / "user-change.txt").write_text("leave me alone\n", encoding="utf-8")
+    called = False
+
+    def fake_run_agent(**kwargs):
+        nonlocal called
+        called = True
+        return BackendResult(0, "", False)
+
+    monkeypatch.setattr(runner, "run_agent", fake_run_agent)
+    config = SwarmConfig(
+        parallel=5,
+        backend="echo",
+        workdir=str(tmp_path),
+        build_allowlist=["project"],
+        commit_per_finding=True,
+    )
+
+    ok, finding = runner.dispatch(
+        Mission("BUILD", "project", None, "brief"),
+        "agent-1",
+        Notebook(tmp_path / "run"),
+        config,
+    )
+
+    assert (ok, finding) == (False, None)
+    assert called is False
+
+
+def test_build_provenance_unstages_changes_when_commit_fails(monkeypatch, tmp_path):
+    project = tmp_path / "project"
+    _init_git_repo(project)
+
+    def fake_run_agent(**kwargs):
+        (project / "change.txt").write_text("agent change\n", encoding="utf-8")
+        return BackendResult(
+            0,
+            "===FINDING===\nTITLE: Safe build\nCLAIM: EMPIRICAL: it works\n",
+            False,
+        )
+
+    real_git = runner._git
+
+    def fail_commit(cwd, *args):
+        if args and args[0] == "commit":
+            raise runner.ProvenanceError("simulated commit failure")
+        return real_git(cwd, *args)
+
+    monkeypatch.setattr(runner, "run_agent", fake_run_agent)
+    monkeypatch.setattr(runner, "_git", fail_commit)
+    config = SwarmConfig(
+        parallel=5,
+        backend="echo",
+        workdir=str(tmp_path),
+        build_allowlist=["project"],
+        commit_per_finding=True,
+    )
+
+    ok, finding = runner.dispatch(
+        Mission("BUILD", "project", None, "brief"),
+        "agent-1",
+        Notebook(tmp_path / "run"),
+        config,
+    )
+
+    assert ok is True
+    assert finding is not None
+    assert (project / "change.txt").read_text(encoding="utf-8") == "agent change\n"
+    assert subprocess.run(
+        ["git", "diff", "--cached", "--quiet"], cwd=project, check=False
+    ).returncode == 0
 
 
 def test_wave_dispatches_at_most_one_primary_mission_per_project(tmp_path):

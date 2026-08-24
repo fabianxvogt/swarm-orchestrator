@@ -4,6 +4,7 @@ import pytest
 
 from swarm import safety
 from swarm.config import SwarmConfig, config_from_mapping, parse_yaml_subset
+from swarm.orchestrator import _effective_config, build_parser
 
 
 class TestDenyList:
@@ -61,6 +62,7 @@ class TestConfig:
             parallel: 5
             backend: echo
             auto_approve: false
+            commit_per_finding: true
             exclude:
               - apps/orchestrator
             build_allowlist: [toy-projects/GameOfLife, apps/kotcumber]
@@ -68,6 +70,7 @@ class TestConfig:
         )
         assert data["parallel"] == 5
         assert data["backend"] == "echo"
+        assert data["commit_per_finding"] is True
         assert data["exclude"] == ["apps/orchestrator"]
         assert data["build_allowlist"] == [
             "toy-projects/GameOfLife",
@@ -100,4 +103,9 @@ class TestConfig:
     def test_defaults_are_safe(self):
         cfg = SwarmConfig()
         assert cfg.auto_approve is False
+        assert cfg.commit_per_finding is False
         assert "research/context-engines" in cfg.exclude
+
+    def test_cli_can_opt_in_to_commit_provenance(self):
+        args = build_parser().parse_args(["run", "--commit-per-finding"])
+        assert _effective_config(args).commit_per_finding is True

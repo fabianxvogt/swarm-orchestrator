@@ -34,6 +34,7 @@ class SwarmConfig:
     backend: str = "opencode"
     model: str | None = None
     auto_approve: bool = False
+    commit_per_finding: bool = False
     workdir: str = "/Users/fabian/Development"
     projects: list[str] = field(default_factory=list)
     exclude: list[str] = field(default_factory=lambda: list(DEFAULT_EXCLUDE))
@@ -156,6 +157,7 @@ def config_from_mapping(data: dict[str, Any]) -> SwarmConfig:
         "backend",
         "model",
         "auto_approve",
+        "commit_per_finding",
         "workdir",
         "projects",
         "exclude",

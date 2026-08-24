@@ -64,6 +64,7 @@ parallel: 8
 interval_min: 20
 timeout_s: 900           # per-agent timeout
 auto_approve: false      # true lets DOCUMENT/BUILD agents auto-approve permissions
+commit_per_finding: false # true makes successful BUILD findings local commits
 workdir: /Users/fabian/Development
 projects:                # override registry (Tier A of PROJECT_INVENTORY.md)
   - path: toy-projects/rule30
@@ -110,6 +111,9 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
 7. `swarm status --json` emits a versioned, read-only summary for scripts;
    retry counts are included, while exact provider cost remains unavailable
    until notebooks record pricing data.
+8. `commit_per_finding` is opt-in and applies only to successful BUILD missions;
+   it requires a clean target worktree, commits only agent changes, restores the
+   index if the commit fails, and never pushes.
 
 ## Status
 
