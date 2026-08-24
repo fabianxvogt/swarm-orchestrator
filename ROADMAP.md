@@ -21,6 +21,10 @@
 
 ## Done
 
+- 2026-08-25: CLI runtime overrides are revalidated after application, so invalid
+  interval and timeout values fail closed before project resolution or backend
+  dispatch. [EMPIRICAL safety regression]
+
 - 2026-08-25: added a deterministic temporary-directory CLI validation gate
   using only the local `echo` backend; it verifies one five-agent wave writes
   five clean notebooks, bounds malformed-finding retries, and reports no

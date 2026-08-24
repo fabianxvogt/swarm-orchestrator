@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import sys
 import time
+from dataclasses import asdict
 from pathlib import Path
 
 from . import safety
@@ -167,7 +168,9 @@ def _effective_config(args: argparse.Namespace) -> SwarmConfig:
         config.auto_approve = True
     if args.commit_per_finding:
         config.commit_per_finding = True
-    return config
+    # CLI overrides are applied after config construction, so re-run the
+    # dataclass guards before any project resolution or backend dispatch.
+    return SwarmConfig(**asdict(config))
 
 
 def _publish(findings: list[Finding]) -> None:

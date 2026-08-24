@@ -109,3 +109,15 @@ class TestConfig:
     def test_cli_can_opt_in_to_commit_provenance(self):
         args = build_parser().parse_args(["run", "--commit-per-finding"])
         assert _effective_config(args).commit_per_finding is True
+
+    @pytest.mark.parametrize(
+        "argv",
+        [
+            ["run", "--interval-min", "-1"],
+            ["run", "--timeout-s", "0"],
+        ],
+    )
+    def test_cli_runtime_overrides_revalidate_safety_limits(self, argv):
+        args = build_parser().parse_args(argv)
+        with pytest.raises(ValueError):
+            _effective_config(args)
