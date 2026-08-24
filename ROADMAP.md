@@ -21,6 +21,9 @@
 
 ## Done
 
+- 2026-08-25: added a deterministic wave-level symlink probe proving that a
+  deny-listed resolved working directory blocks two scheduled local missions
+  before backend calls or notebook dispatch events. [EMPIRICAL safety regression]
 - 2026-08-25: added opt-in local git commit provenance for successful BUILD
   findings. It is disabled by default, requires a clean target worktree, stages
   only post-dispatch safe paths, clears staging when a commit fails, and never

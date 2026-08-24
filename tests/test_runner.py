@@ -306,6 +306,41 @@ def test_dispatch_rejects_denied_workdir_before_backend(monkeypatch, tmp_path):
     assert called is False
 
 
+def test_wave_rejects_symlinked_denied_workdir_before_any_dispatch(
+    monkeypatch, tmp_path
+):
+    denied_target = tmp_path / "Sokra-target"
+    denied_target.mkdir()
+    workdir_alias = tmp_path / "safe-workdir"
+    workdir_alias.symlink_to(denied_target, target_is_directory=True)
+    calls = []
+
+    def fake_run_agent(**kwargs):
+        calls.append(kwargs)
+        return BackendResult(0, "", False)
+
+    monkeypatch.setattr(runner, "run_agent", fake_run_agent)
+    notebook = Notebook(tmp_path / "run")
+    swarm = runner.Swarm(
+        SwarmConfig(
+            parallel=5,
+            backend="echo",
+            workdir=str(workdir_alias),
+        ),
+        [
+            Project(path="project-a", name="a"),
+            Project(path="project-b", name="b"),
+        ],
+        notebook,
+    )
+
+    with pytest.raises(safety.SafetyViolation, match="denied path"):
+        swarm.run_wave()
+
+    assert calls == []
+    assert notebook.entries() == []
+
+
 def test_publication_deduplicates_before_writing(monkeypatch):
     published = []
 
