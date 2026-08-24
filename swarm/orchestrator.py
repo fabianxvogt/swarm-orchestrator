@@ -11,6 +11,7 @@ from .findings import Finding, append_to_connections, append_to_inbox, prepare_f
 from .notebook import Notebook
 from .registry import apply_filters, load_registry
 from .runner import Swarm, install_signal_handlers, reap_stale
+from .status import format_status, summarize_runs
 
 PORTFOLIO_ROOT = Path("/Users/fabian/Development")
 INVENTORY = PORTFOLIO_ROOT / "docs" / "PROJECT_INVENTORY.md"
@@ -69,11 +70,33 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument(
         "--config", type=Path, default=None, help="YAML/JSON config override"
     )
+    status = sub.add_parser("status", help="summarize recent run notebooks")
+    status.add_argument(
+        "--runs-dir",
+        type=Path,
+        default=RUNS_DIR,
+        help="run notebook directory (default: package runs/)",
+    )
+    status.add_argument(
+        "--limit",
+        type=int,
+        default=10,
+        help="maximum number of newest runs to inspect (default: 10)",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.command == "status":
+        try:
+            summaries = summarize_runs(args.runs_dir, args.limit)
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        print(format_status(summaries, args.runs_dir))
+        return 0
+
     config = _effective_config(args)
     projects = apply_filters(
         load_registry(INVENTORY), config.projects or None, config.exclude

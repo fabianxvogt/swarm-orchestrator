@@ -42,6 +42,9 @@ swarm run --parallel 5 --dry-run
 # single validation wave with the echo backend (no model needed)
 swarm run --parallel 5 --backend echo --once
 
+# inspect the newest run notebooks without dispatching agents
+swarm status
+
 # real run: one wave of 8 parallel opencode subagents
 swarm run --parallel 8 --once
 

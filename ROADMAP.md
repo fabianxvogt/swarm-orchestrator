@@ -10,7 +10,6 @@
 
 ## Next
 
-- `swarm status` command summarizing runs/, findings per wave, cost estimate.
 - Optional git commit-per-finding provenance for BUILD missions (opt-in).
 
 ## Later
@@ -21,6 +20,11 @@
   and write up results — see ideas/INBOX.md "Swarm-emergence lab".
 
 ## Done
+
+- 2026-08-25: added bounded read-only `swarm status`, summarizing the newest
+  run notebooks by wave with dispatch, finding, failure, malformed-record, and
+  approximate output-token counts. Exact cost remains unavailable because
+  notebooks do not record provider pricing. [EMPIRICAL observability]
 
 - 2026-08-25: wave assembly caps dispatches at one primary mission per unique
   project, so parallel size cannot create duplicate project targets; deterministic

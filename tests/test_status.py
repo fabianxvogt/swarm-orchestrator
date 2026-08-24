@@ -1,0 +1,83 @@
+from __future__ import annotations
+
+import json
+
+import pytest
+
+from swarm.notebook import Notebook
+from swarm.orchestrator import main
+from swarm.status import format_status, summarize_runs
+
+
+def test_summarize_runs_groups_wave_events_and_counts_failures(tmp_path):
+    run = tmp_path / "20260825-120000"
+    notebook = Notebook(run)
+    notebook.log("agent-1-w120001", "dispatch", {})
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 17},
+    )
+    notebook.log("agent-1-w120001", "finding", {"title": "one"})
+    notebook.log("agent-2-w120001", "dispatch", {})
+    notebook.log(
+        "agent-2-w120001",
+        "result",
+        {"returncode": 1, "timed_out": False, "stdout_chars": 3},
+    )
+    notebook.log("agent-2-w120001", "finding", None)
+    notebook.log("agent-1-w120002", "dispatch_dry_run", {})
+
+    summary = summarize_runs(tmp_path)[0]
+
+    assert summary.name == "20260825-120000"
+    assert summary.dispatches == 3
+    assert summary.findings == 1
+    assert summary.failures == 1
+    assert summary.output_chars == 20
+    assert summary.output_tokens_estimate == 5
+    assert [(wave.name, wave.agents) for wave in summary.waves] == [
+        ("120001", 2),
+        ("120002", 1),
+    ]
+
+
+def test_status_skips_malformed_records_and_is_bounded(tmp_path):
+    for name in ("20260825-120000", "20260825-130000"):
+        run = tmp_path / name
+        run.mkdir()
+        (run / "agent-1-w120000.jsonl").write_text(
+            '{"type":"dispatch","payload":{}}\nnot json\n',
+            encoding="utf-8",
+        )
+
+    summaries = summarize_runs(tmp_path, limit=1)
+
+    assert [summary.name for summary in summaries] == ["20260825-130000"]
+    assert summaries[0].malformed_records == 1
+    report = format_status(summaries, tmp_path)
+    assert "warning: malformed JSONL records=1" in report
+    assert "cost=unavailable" in report
+
+
+def test_status_cli_does_not_require_portfolio_inventory(tmp_path, capsys):
+    run = tmp_path / "20260825-120000"
+    run.mkdir()
+    (run / "agent-1-w120000.jsonl").write_text(
+        json.dumps({"type": "dispatch_dry_run", "payload": "brief"}) + "\n",
+        encoding="utf-8",
+    )
+
+    assert main(["status", "--runs-dir", str(tmp_path)]) == 0
+    assert "dispatches=1" in capsys.readouterr().out
+
+
+def test_status_rejects_non_positive_limit(tmp_path, capsys):
+    assert main(["status", "--runs-dir", str(tmp_path), "--limit", "0"]) == 2
+    assert "limit must be positive" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("limit", [0, -1])
+def test_summarize_runs_rejects_non_positive_limit(tmp_path, limit):
+    with pytest.raises(ValueError, match="limit must be positive"):
+        summarize_runs(tmp_path, limit=limit)
