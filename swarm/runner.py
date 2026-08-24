@@ -165,9 +165,21 @@ class Swarm:
 
     def wave(self, size: int) -> list[tuple[str, Mission]]:
         jobs: list[tuple[str, Mission]] = []
-        for slot in range(size):
+        target = min(size, len({project.path for project in self.projects}))
+        seen_projects: set[str] = set()
+        attempts = 0
+        attempt_limit = (
+            len(_MISSION_ROTATION) * max(len(self.projects), 1) + 8
+        )
+        while len(jobs) < target and attempts < attempt_limit:
+            attempts += 1
+            mission = self.next_mission()
+            if mission.project in seen_projects:
+                continue
+            seen_projects.add(mission.project)
+            slot = len(jobs)
             agent = f"agent-{slot + 1}"
-            jobs.append((agent, self.next_mission()))
+            jobs.append((agent, mission))
         return jobs
 
     def run_wave(self) -> int:

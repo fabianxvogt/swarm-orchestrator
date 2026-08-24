@@ -10,7 +10,6 @@
 
 ## Next
 
-- Per-agent concurrency limits per project (don't send two agents into one repo).
 - `swarm status` command summarizing runs/, findings per wave, cost estimate.
 - Optional git commit-per-finding provenance for BUILD missions (opt-in).
 
@@ -22,6 +21,10 @@
   and write up results — see ideas/INBOX.md "Swarm-emergence lab".
 
 ## Done
+
+- 2026-08-25: wave assembly caps dispatches at one primary mission per unique
+  project, so parallel size cannot create duplicate project targets; deterministic
+  runner coverage added. [EMPIRICAL concurrency regression]
 
 - 2026-08-24: findings are normalized and deduplicated before publication;
   duplicate copies retain the highest deterministic quality rating. [EMPIRICAL

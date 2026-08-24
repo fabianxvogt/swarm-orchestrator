@@ -22,7 +22,10 @@ CLAIM: should not be published
 def test_failed_or_timed_out_child_finding_is_not_collected(
     monkeypatch, tmp_path, returncode, timed_out
 ):
+    calls = []
+
     def fake_run_agent(**kwargs):
+        calls.append(kwargs)
         return BackendResult(returncode, FINDING_OUTPUT, timed_out)
 
     monkeypatch.setattr(runner, "run_agent", fake_run_agent)
@@ -34,6 +37,23 @@ def test_failed_or_timed_out_child_finding_is_not_collected(
 
     assert swarm.run_wave() == 0
     assert swarm.findings == []
+    assert len(calls) == 1
+
+
+def test_wave_dispatches_at_most_one_primary_mission_per_project(tmp_path):
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=8, backend="echo", workdir=str(tmp_path)),
+        [
+            Project(path="project-a", name="a"),
+            Project(path="project-b", name="b"),
+        ],
+        Notebook(tmp_path / "run"),
+    )
+
+    jobs = swarm.wave(swarm.config.parallel)
+
+    assert [mission.project for _, mission in jobs] == ["project-a", "project-b"]
+    assert len({mission.project for _, mission in jobs}) == len(jobs)
 
 
 def test_dispatch_rejects_denied_workdir_before_backend(monkeypatch, tmp_path):
