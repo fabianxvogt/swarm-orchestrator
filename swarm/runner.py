@@ -13,7 +13,7 @@ from . import safety
 from .backends import run_agent
 from .config import SwarmConfig
 from .findings import Finding, parse_finding
-from .missions import Mission, build_brief
+from .missions import SAFETY_PREAMBLE, Mission, build_brief
 from .notebook import Notebook
 from .registry import Project
 
@@ -197,6 +197,14 @@ def make_mission(index: int, projects: list[Project], config: SwarmConfig) -> Mi
 _MISSION_ROTATION = ["EXPLORE", "CONNECT", "IDEATE", "EXPLORE", "DOCUMENT", "BUILD"]
 
 
+def _check_mission_brief(brief: str) -> None:
+    # The generated brief intentionally includes the deny-list in its trusted
+    # safety preamble; validate the mission-specific content around it.
+    if brief.startswith(SAFETY_PREAMBLE):
+        brief = brief[len(SAFETY_PREAMBLE) :]
+    safety.check_text(brief)
+
+
 def dispatch(
     mission: Mission,
     agent: str,
@@ -206,6 +214,7 @@ def dispatch(
     if STOP.is_set():
         return False, None
     safety.check_path(config.workdir, write=mission.writable)
+    _check_mission_brief(mission.brief)
     if mission.kind == "BUILD":
         safety.check_build_allowed(mission.project, config.build_allowlist)
         safety.check_path(mission.project, write=True)

@@ -21,6 +21,9 @@
 
 ## Done
 
+- 2026-08-25: dispatch now validates mission text before any backend call, closing
+  a direct/mutated-brief bypass of the documented deny-list; deterministic
+  no-backend regression coverage added. [EMPIRICAL safety regression]
 - 2026-08-25: added a deterministic wave-level symlink probe proving that a
   deny-listed resolved working directory blocks two scheduled local missions
   before backend calls or notebook dispatch events. [EMPIRICAL safety regression]

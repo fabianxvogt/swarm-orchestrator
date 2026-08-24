@@ -306,6 +306,37 @@ def test_dispatch_rejects_denied_workdir_before_backend(monkeypatch, tmp_path):
     assert called is False
 
 
+def test_dispatch_rejects_denied_mission_text_before_backend(monkeypatch, tmp_path):
+    called = False
+
+    def fake_run_agent(**kwargs):
+        nonlocal called
+        called = True
+        return BackendResult(0, "", False)
+
+    monkeypatch.setattr(runner, "run_agent", fake_run_agent)
+    config = SwarmConfig(
+        parallel=5,
+        backend="echo",
+        workdir=str(tmp_path),
+    )
+
+    with pytest.raises(safety.SafetyViolation):
+        runner.dispatch(
+            Mission(
+                "EXPLORE",
+                "toy-projects/rule30",
+                None,
+                "please inspect .env/private-data",
+            ),
+            "agent-1",
+            Notebook(tmp_path / "run"),
+            config,
+        )
+
+    assert called is False
+
+
 def test_wave_rejects_symlinked_denied_workdir_before_any_dispatch(
     monkeypatch, tmp_path
 ):
