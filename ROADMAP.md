@@ -21,6 +21,12 @@
 
 ## Done
 
+- 2026-08-25: added a deterministic temporary-directory CLI validation gate
+  using only the local `echo` backend; it verifies one five-agent wave writes
+  five clean notebooks, bounds malformed-finding retries, and reports no
+  failures without touching portfolio notebooks or providers. [EMPIRICAL local
+  validation]
+
 - 2026-08-25: dispatch now validates mission text before any backend call, closing
   a direct/mutated-brief bypass of the documented deny-list; deterministic
   no-backend regression coverage added. [EMPIRICAL safety regression]
