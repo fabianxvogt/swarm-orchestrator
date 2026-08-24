@@ -28,6 +28,9 @@
   run notebooks by wave with dispatch, finding, failure, malformed-record, and
   approximate output-token counts. Exact cost remains unavailable because
   notebooks do not record provider pricing. [EMPIRICAL observability]
+- 2026-08-25: added opt-in `swarm status --json` with schema version, run and
+  wave counters, aggregate totals, and explicit unavailable-cost metadata;
+  default text output is unchanged. [EMPIRICAL observability]
 
 - 2026-08-25: wave assembly caps dispatches at one primary mission per unique
   project, so parallel size cannot create duplicate project targets; deterministic

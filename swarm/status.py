@@ -101,6 +101,70 @@ def format_status(summaries: list[RunSummary], runs_dir: Path) -> str:
     return "\n".join(lines)
 
 
+def format_status_json(summaries: list[RunSummary], runs_dir: Path) -> str:
+    """Format the same bounded status data as a versioned JSON document."""
+    return json.dumps(
+        _status_payload(summaries, runs_dir),
+        ensure_ascii=False,
+        indent=2,
+        sort_keys=True,
+    )
+
+
+def _status_payload(summaries: list[RunSummary], runs_dir: Path) -> dict:
+    runs = [_run_payload(summary) for summary in summaries]
+    return {
+        "schema_version": 1,
+        "runs_dir": str(runs_dir),
+        "runs": runs,
+        "totals": {
+            "runs": len(runs),
+            "waves": sum(len(summary.waves) for summary in summaries),
+            "dispatches": sum(summary.dispatches for summary in summaries),
+            "findings": sum(summary.findings for summary in summaries),
+            "failures": sum(summary.failures for summary in summaries),
+            "output_chars": sum(summary.output_chars for summary in summaries),
+            "output_tokens_estimate": sum(
+                summary.output_tokens_estimate for summary in summaries
+            ),
+            "malformed_records": sum(
+                summary.malformed_records for summary in summaries
+            ),
+        },
+        "cost": None,
+        "cost_status": "unavailable",
+    }
+
+
+def _run_payload(summary: RunSummary) -> dict:
+    return {
+        "name": summary.name,
+        "waves": [_wave_payload(wave) for wave in summary.waves],
+        "totals": {
+            "waves": len(summary.waves),
+            "dispatches": summary.dispatches,
+            "findings": summary.findings,
+            "failures": summary.failures,
+            "output_chars": summary.output_chars,
+            "output_tokens_estimate": summary.output_tokens_estimate,
+            "malformed_records": summary.malformed_records,
+        },
+    }
+
+
+def _wave_payload(wave: WaveSummary) -> dict:
+    return {
+        "name": wave.name,
+        "agents": wave.agents,
+        "dispatches": wave.dispatches,
+        "findings": wave.findings,
+        "failures": wave.failures,
+        "output_chars": wave.output_chars,
+        "output_tokens_estimate": wave.output_tokens_estimate,
+        "malformed_records": wave.malformed_records,
+    }
+
+
 def _summarize_run(run_dir: Path) -> RunSummary:
     counters: dict[str, dict[str, int]] = {}
     for notebook in sorted(run_dir.glob("*.jsonl")):

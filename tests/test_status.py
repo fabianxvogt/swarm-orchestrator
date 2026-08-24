@@ -6,7 +6,7 @@ import pytest
 
 from swarm.notebook import Notebook
 from swarm.orchestrator import main
-from swarm.status import format_status, summarize_runs
+from swarm.status import format_status, format_status_json, summarize_runs
 
 
 def test_summarize_runs_groups_wave_events_and_counts_failures(tmp_path):
@@ -70,6 +70,64 @@ def test_status_cli_does_not_require_portfolio_inventory(tmp_path, capsys):
 
     assert main(["status", "--runs-dir", str(tmp_path)]) == 0
     assert "dispatches=1" in capsys.readouterr().out
+
+
+def test_status_json_has_versioned_run_and_wave_totals(tmp_path):
+    run = tmp_path / "20260825-120000"
+    notebook = Notebook(run)
+    notebook.log("agent-1-w120001", "dispatch", {})
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 8},
+    )
+    notebook.log("agent-1-w120001", "finding", {"title": "one"})
+
+    payload = json.loads(format_status_json(summarize_runs(tmp_path), tmp_path))
+
+    assert payload["schema_version"] == 1
+    assert payload["runs_dir"] == str(tmp_path)
+    assert payload["cost"] is None
+    assert payload["cost_status"] == "unavailable"
+    assert payload["totals"] == {
+        "runs": 1,
+        "waves": 1,
+        "dispatches": 1,
+        "findings": 1,
+        "failures": 0,
+        "output_chars": 8,
+        "output_tokens_estimate": 2,
+        "malformed_records": 0,
+    }
+    assert payload["runs"][0]["totals"] == {
+        "waves": 1,
+        "dispatches": 1,
+        "findings": 1,
+        "failures": 0,
+        "output_chars": 8,
+        "output_tokens_estimate": 2,
+        "malformed_records": 0,
+    }
+    assert payload["runs"][0]["waves"][0] == {
+        "name": "120001",
+        "agents": 1,
+        "dispatches": 1,
+        "findings": 1,
+        "failures": 0,
+        "output_chars": 8,
+        "output_tokens_estimate": 2,
+        "malformed_records": 0,
+    }
+
+
+def test_status_cli_json_mode_is_machine_readable(tmp_path, capsys):
+    assert main(["status", "--runs-dir", str(tmp_path), "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["schema_version"] == 1
+    assert payload["runs"] == []
+    assert payload["totals"]["runs"] == 0
 
 
 def test_status_rejects_non_positive_limit(tmp_path, capsys):

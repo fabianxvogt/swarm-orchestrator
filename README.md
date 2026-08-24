@@ -45,6 +45,9 @@ swarm run --parallel 5 --backend echo --once
 # inspect the newest run notebooks without dispatching agents
 swarm status
 
+# consume the same bounded report from scripts
+swarm status --json
+
 # real run: one wave of 8 parallel opencode subagents
 swarm run --parallel 8 --once
 
@@ -104,6 +107,8 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
    for write missions.
 6. A successful backend response with an absent or malformed FINDING block gets
    one bounded retry; failed and timed-out responses are not retried.
+7. `swarm status --json` emits a versioned, read-only summary for scripts;
+   exact provider cost remains unavailable until notebooks record pricing data.
 
 ## Status
 

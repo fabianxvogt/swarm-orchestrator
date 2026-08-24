@@ -11,7 +11,7 @@ from .findings import Finding, append_to_connections, append_to_inbox, prepare_f
 from .notebook import Notebook
 from .registry import apply_filters, load_registry
 from .runner import Swarm, install_signal_handlers, reap_stale
-from .status import format_status, summarize_runs
+from .status import format_status, format_status_json, summarize_runs
 
 PORTFOLIO_ROOT = Path("/Users/fabian/Development")
 INVENTORY = PORTFOLIO_ROOT / "docs" / "PROJECT_INVENTORY.md"
@@ -83,6 +83,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=10,
         help="maximum number of newest runs to inspect (default: 10)",
     )
+    status.add_argument(
+        "--json",
+        action="store_true",
+        help="emit a versioned JSON document instead of human-readable text",
+    )
     return parser
 
 
@@ -94,7 +99,8 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 2
-        print(format_status(summaries, args.runs_dir))
+        formatter = format_status_json if args.json else format_status
+        print(formatter(summaries, args.runs_dir))
         return 0
 
     config = _effective_config(args)
