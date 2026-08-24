@@ -108,7 +108,8 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
 6. A successful backend response with an absent or malformed FINDING block gets
    one bounded retry; failed and timed-out responses are not retried.
 7. `swarm status --json` emits a versioned, read-only summary for scripts;
-   exact provider cost remains unavailable until notebooks record pricing data.
+   retry counts are included, while exact provider cost remains unavailable
+   until notebooks record pricing data.
 
 ## Status
 

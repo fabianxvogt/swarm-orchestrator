@@ -16,6 +16,7 @@ class WaveSummary:
     name: str
     agents: int = 0
     dispatches: int = 0
+    retries: int = 0
     findings: int = 0
     failures: int = 0
     output_chars: int = 0
@@ -39,6 +40,10 @@ class RunSummary:
     @property
     def findings(self) -> int:
         return sum(wave.findings for wave in self.waves)
+
+    @property
+    def retries(self) -> int:
+        return sum(wave.retries for wave in self.waves)
 
     @property
     def failures(self) -> int:
@@ -83,6 +88,7 @@ def format_status(summaries: list[RunSummary], runs_dir: Path) -> str:
         lines.append(
             f"run {summary.name}: waves={len(summary.waves)} "
             f"dispatches={summary.dispatches} findings={summary.findings} "
+            f"retries={summary.retries} "
             f"failures={summary.failures} "
             f"output_tokens~{summary.output_tokens_estimate} "
             "cost=unavailable"
@@ -91,6 +97,7 @@ def format_status(summaries: list[RunSummary], runs_dir: Path) -> str:
             lines.append(
                 f"  wave {wave.name}: agents={wave.agents} "
                 f"dispatches={wave.dispatches} findings={wave.findings} "
+                f"retries={wave.retries} "
                 f"failures={wave.failures}"
             )
         if summary.malformed_records:
@@ -121,6 +128,7 @@ def _status_payload(summaries: list[RunSummary], runs_dir: Path) -> dict:
             "runs": len(runs),
             "waves": sum(len(summary.waves) for summary in summaries),
             "dispatches": sum(summary.dispatches for summary in summaries),
+            "retries": sum(summary.retries for summary in summaries),
             "findings": sum(summary.findings for summary in summaries),
             "failures": sum(summary.failures for summary in summaries),
             "output_chars": sum(summary.output_chars for summary in summaries),
@@ -143,6 +151,7 @@ def _run_payload(summary: RunSummary) -> dict:
         "totals": {
             "waves": len(summary.waves),
             "dispatches": summary.dispatches,
+            "retries": summary.retries,
             "findings": summary.findings,
             "failures": summary.failures,
             "output_chars": summary.output_chars,
@@ -157,6 +166,7 @@ def _wave_payload(wave: WaveSummary) -> dict:
         "name": wave.name,
         "agents": wave.agents,
         "dispatches": wave.dispatches,
+        "retries": wave.retries,
         "findings": wave.findings,
         "failures": wave.failures,
         "output_chars": wave.output_chars,
@@ -174,6 +184,7 @@ def _summarize_run(run_dir: Path) -> RunSummary:
             {
                 "agents": 0,
                 "dispatches": 0,
+                "retries": 0,
                 "findings": 0,
                 "failures": 0,
                 "output_chars": 0,
@@ -211,6 +222,8 @@ def _count_event(event: object, counter: dict[str, int]) -> None:
     payload = event.get("payload")
     if event_type in {"dispatch", "dispatch_dry_run"}:
         counter["dispatches"] += 1
+    elif event_type == "retry":
+        counter["retries"] += 1
     elif event_type == "finding" and payload is not None:
         counter["findings"] += 1
     elif event_type == "result":

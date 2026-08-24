@@ -30,7 +30,8 @@
   notebooks do not record provider pricing. [EMPIRICAL observability]
 - 2026-08-25: added opt-in `swarm status --json` with schema version, run and
   wave counters, aggregate totals, and explicit unavailable-cost metadata;
-  default text output is unchanged. [EMPIRICAL observability]
+  default text output is unchanged. Status also exposes bounded retry counts
+  from existing notebook events. [EMPIRICAL observability]
 
 - 2026-08-25: wave assembly caps dispatches at one primary mission per unique
   project, so parallel size cannot create duplicate project targets; deterministic

@@ -18,6 +18,11 @@ def test_summarize_runs_groups_wave_events_and_counts_failures(tmp_path):
         "result",
         {"returncode": 0, "timed_out": False, "stdout_chars": 17},
     )
+    notebook.log(
+        "agent-1-w120001",
+        "retry",
+        {"reason": "missing_or_malformed_finding", "attempt": 2},
+    )
     notebook.log("agent-1-w120001", "finding", {"title": "one"})
     notebook.log("agent-2-w120001", "dispatch", {})
     notebook.log(
@@ -32,6 +37,7 @@ def test_summarize_runs_groups_wave_events_and_counts_failures(tmp_path):
 
     assert summary.name == "20260825-120000"
     assert summary.dispatches == 3
+    assert summary.retries == 1
     assert summary.findings == 1
     assert summary.failures == 1
     assert summary.output_chars == 20
@@ -93,6 +99,7 @@ def test_status_json_has_versioned_run_and_wave_totals(tmp_path):
         "runs": 1,
         "waves": 1,
         "dispatches": 1,
+        "retries": 0,
         "findings": 1,
         "failures": 0,
         "output_chars": 8,
@@ -102,6 +109,7 @@ def test_status_json_has_versioned_run_and_wave_totals(tmp_path):
     assert payload["runs"][0]["totals"] == {
         "waves": 1,
         "dispatches": 1,
+        "retries": 0,
         "findings": 1,
         "failures": 0,
         "output_chars": 8,
@@ -112,6 +120,7 @@ def test_status_json_has_versioned_run_and_wave_totals(tmp_path):
         "name": "120001",
         "agents": 1,
         "dispatches": 1,
+        "retries": 0,
         "findings": 1,
         "failures": 0,
         "output_chars": 8,
@@ -128,6 +137,26 @@ def test_status_cli_json_mode_is_machine_readable(tmp_path, capsys):
     assert payload["schema_version"] == 1
     assert payload["runs"] == []
     assert payload["totals"]["runs"] == 0
+
+
+def test_status_reports_retry_events_without_changing_dispatch_count(tmp_path):
+    run = tmp_path / "20260825-120000"
+    notebook = Notebook(run)
+    notebook.log("agent-1-w120001", "dispatch", {})
+    notebook.log(
+        "agent-1-w120001",
+        "retry",
+        {"reason": "missing_or_malformed_finding", "attempt": 2},
+    )
+
+    summary = summarize_runs(tmp_path)[0]
+    payload = json.loads(format_status_json([summary], tmp_path))
+
+    assert summary.dispatches == 1
+    assert summary.retries == 1
+    assert summary.findings == 0
+    assert payload["totals"]["retries"] == 1
+    assert payload["runs"][0]["waves"][0]["retries"] == 1
 
 
 def test_status_rejects_non_positive_limit(tmp_path, capsys):
