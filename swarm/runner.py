@@ -7,7 +7,6 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Optional
 
 from . import safety
 from .backends import run_agent
@@ -62,6 +61,7 @@ def dispatch(
 ) -> tuple[bool, Finding | None]:
     if STOP.is_set():
         return False, None
+    safety.check_path(config.workdir, write=mission.writable)
     auto = config.auto_approve and mission.writable
     notebook.log(
         agent,
@@ -119,7 +119,7 @@ def reap_stale(run_root: Path) -> list[int]:
 
 def _is_swarm_process(pid: int) -> bool:
     try:
-        with open(f"/proc/{pid}/cmdline") as fh:
+        with open(f"/proc/{pid}/cmdline", "rb") as fh:
             return MARKER.encode() in fh.read()
     except OSError:
         pass
@@ -176,8 +176,10 @@ class Swarm:
         collected = 0
         if self.dry_run:
             for agent, mission in jobs:
-                print(f"[dry-run] {agent}: {mission.kind} on {mission.project}"
-                      + (f" <-> {mission.partner}" if mission.partner else ""))
+                print(
+                    f"[dry-run] {agent}: {mission.kind} on {mission.project}"
+                    + (f" <-> {mission.partner}" if mission.partner else "")
+                )
                 self.notebook.log(agent, "dispatch_dry_run", mission.brief)
             return 0
         with ThreadPoolExecutor(max_workers=self.config.parallel) as pool:
@@ -185,14 +187,18 @@ class Swarm:
                 (
                     agent,
                     pool.submit(
-                        dispatch, mission, f"{agent}-w{wave_id}", self.notebook, self.config
+                        dispatch,
+                        mission,
+                        f"{agent}-w{wave_id}",
+                        self.notebook,
+                        self.config,
                     ),
                 )
                 for agent, mission in jobs
             ]
-            for agent, future in futures:
+            for _, future in futures:
                 ok, finding = future.result()
-                if finding is not None:
+                if ok and finding is not None:
                     self.findings.append(finding)
                     collected += 1
         return collected

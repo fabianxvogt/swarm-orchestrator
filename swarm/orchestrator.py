@@ -4,7 +4,6 @@ import argparse
 import sys
 import time
 from pathlib import Path
-from typing import Optional
 
 from . import safety
 from .config import SwarmConfig, load_config
@@ -28,27 +27,52 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     run = sub.add_parser("run", help="dispatch missions (loop or single wave)")
-    run.add_argument("--hours", type=float, default=0.0,
-                     help="time budget in hours; 0 means a single wave")
-    run.add_argument("--parallel", type=int, default=None,
-                     help="number of parallel subagents (default from config, else 8)")
-    run.add_argument("--interval-min", type=float, default=None,
-                     help="minutes to sleep between waves (default from config)")
-    run.add_argument("--timeout-s", type=int, default=None,
-                     help="per-agent timeout in seconds (default from config)")
+    run.add_argument(
+        "--hours",
+        type=float,
+        default=0.0,
+        help="time budget in hours; 0 means a single wave",
+    )
+    run.add_argument(
+        "--parallel",
+        type=int,
+        default=None,
+        help="number of parallel subagents (default from config, else 8)",
+    )
+    run.add_argument(
+        "--interval-min",
+        type=float,
+        default=None,
+        help="minutes to sleep between waves (default from config)",
+    )
+    run.add_argument(
+        "--timeout-s",
+        type=int,
+        default=None,
+        help="per-agent timeout in seconds (default from config)",
+    )
     run.add_argument("--backend", choices=["opencode", "claude", "echo"], default=None)
     run.add_argument("--model", default=None, help="provider/model for the backend")
-    run.add_argument("--auto", action="store_true",
-                     help="allow write missions (DOCUMENT/BUILD) to auto-approve permissions")
-    run.add_argument("--once", action="store_true", help="run exactly one wave and exit")
-    run.add_argument("--dry-run", action="store_true",
-                     help="print mission briefs without spawning agents")
-    run.add_argument("--config", type=Path, default=None,
-                     help="YAML/JSON config override")
+    run.add_argument(
+        "--auto",
+        action="store_true",
+        help="allow write missions (DOCUMENT/BUILD) to auto-approve permissions",
+    )
+    run.add_argument(
+        "--once", action="store_true", help="run exactly one wave and exit"
+    )
+    run.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="print mission briefs without spawning agents",
+    )
+    run.add_argument(
+        "--config", type=Path, default=None, help="YAML/JSON config override"
+    )
     return parser
 
 
-def main(argv: Optional[list[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     config = _effective_config(args)
     projects = apply_filters(
@@ -71,8 +95,10 @@ def main(argv: Optional[list[str]] = None) -> int:
     notebook = Notebook(run_dir)
     swarm = Swarm(config, projects, notebook, dry_run=args.dry_run)
 
-    print(f"swarm: {len(projects)} projects, backend={config.backend}, "
-          f"parallel={config.parallel}, run_dir={run_dir}")
+    print(
+        f"swarm: {len(projects)} projects, backend={config.backend}, "
+        f"parallel={config.parallel}, run_dir={run_dir}"
+    )
     try:
         if args.once or args.hours <= 0:
             collected = swarm.run_wave()
@@ -92,8 +118,8 @@ def main(argv: Optional[list[str]] = None) -> int:
 def _effective_config(args: argparse.Namespace) -> SwarmConfig:
     config = load_config(args.config) if args.config else SwarmConfig()
     if args.parallel is not None:
-        if not 1 <= args.parallel <= 16:
-            raise SystemExit("error: --parallel must be between 1 and 16")
+        if not 5 <= args.parallel <= 10:
+            raise SystemExit("error: --parallel must be between 5 and 10")
         config.parallel = args.parallel
     if args.interval_min is not None:
         config.interval_min = args.interval_min
@@ -118,8 +144,10 @@ def _publish(findings: list) -> None:
                 append_to_inbox(finding, INBOX)
                 print(f"idea recorded: {finding.title}")
         except (safety.SafetyViolation, OSError, ValueError) as exc:
-            print(f"warning: could not record finding {finding.title!r}: {exc}",
-                  file=sys.stderr)
+            print(
+                f"warning: could not record finding {finding.title!r}: {exc}",
+                file=sys.stderr,
+            )
 
 
 if __name__ == "__main__":

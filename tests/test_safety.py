@@ -4,7 +4,6 @@ import pytest
 
 from swarm import safety
 from swarm.config import SwarmConfig, config_from_mapping, parse_yaml_subset
-from swarm.missions import build_brief
 
 
 class TestDenyList:
@@ -16,6 +15,15 @@ class TestDenyList:
         with pytest.raises(safety.SafetyViolation):
             safety.check_path("/Users/fabian/Development/sokra-step-7-99995-recovered")
 
+    def test_denied_symlink_target_rejected(self, tmp_path):
+        denied = tmp_path / "Sokra-target"
+        denied.mkdir()
+        alias = tmp_path / "benign-alias"
+        alias.symlink_to(denied, target_is_directory=True)
+
+        with pytest.raises(safety.SafetyViolation):
+            safety.check_path(str(alias))
+
     def test_sokra_in_task_text_rejected(self):
         with pytest.raises(safety.SafetyViolation):
             safety.check_task("please read Sokra-step-28b-6r and summarize")
@@ -26,7 +34,9 @@ class TestDenyList:
 
     def test_service_account_key_rejected(self):
         with pytest.raises(safety.SafetyViolation):
-            safety.check_path("research/context-engines/context-ai/sokra-477315-key.json")
+            safety.check_path(
+                "research/context-engines/context-ai/sokra-477315-key.json"
+            )
 
     def test_benign_path_allowed(self):
         safety.check_path("toy-projects/GameOfLife")

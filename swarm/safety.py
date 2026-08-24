@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import re
-from typing import Pattern
+from pathlib import Path
+from re import Pattern
 
 
 class SafetyViolation(Exception):
@@ -29,10 +30,13 @@ def _match(path_or_text: str, patterns: list[Pattern[str]]) -> str | None:
 
 
 def check_path(path: str, write: bool = False) -> None:
-    """Raise SafetyViolation if a path is forbidden. Every task and cwd passes here."""
-    hit = _match(path, WRITE_DENY_PATTERNS if write else DENY_PATTERNS)
-    if hit:
-        raise SafetyViolation(f"denied path (pattern {hit!r}): {path}")
+    """Raise SafetyViolation if a path or its resolved target is forbidden."""
+    patterns = WRITE_DENY_PATTERNS if write else DENY_PATTERNS
+    candidates = (path, str(Path(path).expanduser().resolve(strict=False)))
+    for candidate in candidates:
+        hit = _match(candidate, patterns)
+        if hit:
+            raise SafetyViolation(f"denied path (pattern {hit!r}): {path}")
 
 
 def check_task(text: str, cwd: str | None = None) -> None:
@@ -49,6 +53,4 @@ def check_text(text: str) -> None:
 
 def check_build_allowed(project: str, allowlist: list[str]) -> None:
     if project not in allowlist:
-        raise SafetyViolation(
-            f"project {project!r} is not in the BUILD allowlist"
-        )
+        raise SafetyViolation(f"project {project!r} is not in the BUILD allowlist")

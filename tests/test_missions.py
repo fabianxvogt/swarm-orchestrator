@@ -95,3 +95,19 @@ class TestMissionBriefs:
         projects = [Project(path="Sokra/evil", name="evil")]
         with pytest.raises(safety.SafetyViolation):
             make_mission(0, projects, config)
+
+
+class TestConfigGuards:
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"parallel": 4},
+            {"parallel": 11},
+            {"interval_min": -1},
+            {"timeout_s": 0},
+            {"backend": "unknown"},
+        ],
+    )
+    def test_runtime_limits_fail_closed(self, kwargs):
+        with pytest.raises(ValueError):
+            SwarmConfig(**kwargs)

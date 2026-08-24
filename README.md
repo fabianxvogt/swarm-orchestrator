@@ -39,8 +39,8 @@ pip install -e .
 # print mission briefs without spawning anything
 swarm run --parallel 5 --dry-run
 
-# single wave with the echo backend (no model needed)
-swarm run --parallel 2 --backend echo --once
+# single validation wave with the echo backend (no model needed)
+swarm run --parallel 5 --backend echo --once
 
 # real run: one wave of 8 parallel opencode subagents
 swarm run --parallel 8 --once

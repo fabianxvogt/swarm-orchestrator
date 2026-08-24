@@ -19,6 +19,17 @@ DEFAULT_EXCLUDE = ["apps/orchestrator", "research/context-engines"]
 class SwarmConfig:
     parallel: int = 8
     interval_min: int = 20
+
+    def __post_init__(self) -> None:
+        if not 5 <= self.parallel <= 10:
+            raise ValueError("parallel must be between 5 and 10 in experimental mode")
+        if self.interval_min < 0:
+            raise ValueError("interval_min must be non-negative")
+        if self.timeout_s <= 0:
+            raise ValueError("timeout_s must be positive")
+        if self.backend not in {"opencode", "claude", "echo"}:
+            raise ValueError(f"unsupported backend: {self.backend!r}")
+
     timeout_s: int = 900
     backend: str = "opencode"
     model: str | None = None
@@ -111,11 +122,14 @@ def parse_yaml_subset(text: str) -> dict[str, Any]:
 
 
 def load_config(path: Path) -> SwarmConfig:
-    text = path.read_text(encoding="utf-8")
-    if path.suffix == ".json":
-        data: dict[str, Any] = json.loads(text)
-    else:
-        data = parse_yaml_subset(text)
+    try:
+        text = path.read_text(encoding="utf-8")
+        if path.suffix == ".json":
+            data: dict[str, Any] = json.loads(text)
+        else:
+            data = parse_yaml_subset(text)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"invalid config {path}: {exc}") from exc
     return config_from_mapping(data)
 
 
