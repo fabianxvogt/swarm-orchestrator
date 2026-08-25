@@ -60,7 +60,8 @@ swarm status --runs-dir /path/to/runs --limit 1 --json
 Record the run directory, backend/model, start and end times, configured
 parallelism, interval, and observed wave count. Then verify:
 
-- `schema_version` is recognized and `malformed_records` is zero.
+- `schema_version` is recognized and `malformed_records` is zero; this includes
+  JSON-valid events whose payload shape is not part of the notebook contract.
 - `contract_violations` is zero; this confirms each runtime dispatch has a
   result/finding record, retries stay bounded and do not follow failed results,
   and no primary project is dispatched twice in one wave. Dry-run notebooks are

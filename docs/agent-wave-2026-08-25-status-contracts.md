@@ -6,8 +6,10 @@ Extended the read-only status report with `contract_violations` counters at
 wave, run, and aggregate levels. The counters flag incomplete runtime notebook
 sequences and retry protocol breaks: a dispatch without a result, a result
 without its finding record, unbounded retries, or a retry after a failed
-result, or a duplicate primary project within a wave. Dry-run notebooks are
-intentionally exempt because they do not invoke a backend; safety-blocked
+result, or a duplicate primary project within a wave. Status also reports a
+JSON-valid `finding` event whose payload is not an object or `null` as
+malformed, so that payload cannot inflate the finding count. Dry-run notebooks
+are intentionally exempt because they do not invoke a backend; safety-blocked
 notebooks are exempt because they stop before dispatch.
 
 ## Evidence
@@ -19,6 +21,8 @@ notebooks are exempt because they stop before dispatch.
   directory.
 - **EMPIRICAL:** synthetic notebooks that dispatch the same primary project in
   one wave report one contract violation, while distinct projects remain clean.
+- **EMPIRICAL:** a JSON-valid `finding` event with a list payload increments
+  `malformed_records` without incrementing `findings`.
 - **EMPIRICAL:** the local echo validation gate reports zero contract
   violations and five distinct primary projects.
 

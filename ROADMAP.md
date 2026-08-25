@@ -23,6 +23,10 @@
 
 ## Done
 
+- 2026-08-25: status now treats JSON-valid `finding` events with a non-object,
+  non-null payload as malformed and excludes them from finding totals. [EMPIRICAL
+  status-contract regression]
+
 - 2026-08-25: status contract validation now flags duplicate primary projects
   within a wave, and the deterministic echo gate asserts five distinct project
   dispatches. [EMPIRICAL local acceptance invariant]

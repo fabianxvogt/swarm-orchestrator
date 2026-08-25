@@ -111,6 +111,8 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
 7. `swarm status --json` emits a versioned, read-only summary for scripts;
    retry counts and notebook contract-violation counts are included, while
    exact provider cost remains unavailable until notebooks record pricing data.
+   JSON-valid finding events with non-object, non-null payloads are reported as
+   malformed instead of being counted as findings.
    The CLI and `summarize_runs` API require a positive integer `limit`; malformed
    limits fail closed before notebook inspection.
 8. `commit_per_finding` is opt-in and applies only to successful BUILD missions;

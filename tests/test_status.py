@@ -73,6 +73,26 @@ def test_status_skips_malformed_records_and_is_bounded(tmp_path):
     assert "cost=unavailable" in report
 
 
+def test_status_reports_non_object_finding_payload_without_counting_finding(
+    tmp_path,
+):
+    run = tmp_path / "20260825-120000"
+    notebook = Notebook(run)
+    notebook.log("agent-1-w120001", "dispatch", {})
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0},
+    )
+    notebook.log("agent-1-w120001", "finding", ["not", "a", "finding"])
+
+    summary = summarize_runs(tmp_path)[0]
+
+    assert summary.findings == 0
+    assert summary.malformed_records == 1
+    assert summary.contract_violations == 0
+
+
 def test_summarize_runs_orders_numeric_collision_suffixes(tmp_path):
     for name in (
         "20260825-120000",
