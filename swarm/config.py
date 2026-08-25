@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -23,8 +24,8 @@ class SwarmConfig:
     def __post_init__(self) -> None:
         if not 5 <= self.parallel <= 10:
             raise ValueError("parallel must be between 5 and 10 in experimental mode")
-        if self.interval_min < 0:
-            raise ValueError("interval_min must be non-negative")
+        if not math.isfinite(self.interval_min) or self.interval_min < 0:
+            raise ValueError("interval_min must be finite and non-negative")
         if self.timeout_s <= 0:
             raise ValueError("timeout_s must be positive")
         if self.backend not in {"opencode", "claude", "echo"}:

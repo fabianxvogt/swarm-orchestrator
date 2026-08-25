@@ -21,6 +21,10 @@
 
 ## Done
 
+- 2026-08-25: CLI `--hours` and config `interval_min` now reject negative or
+  non-finite duration values before project resolution or dispatch; regression
+  coverage protects the bounded-run invariant. [EMPIRICAL safety regression]
+
 - 2026-08-25: CLI runtime overrides are revalidated after application, so invalid
   interval and timeout values fail closed before project resolution or backend
   dispatch. [EMPIRICAL safety regression]

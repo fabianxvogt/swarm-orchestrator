@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 import time
 from dataclasses import asdict
@@ -21,6 +22,16 @@ CONNECTIONS = PORTFOLIO_ROOT / "ideas" / "CONNECTIONS.md"
 RUNS_DIR = Path(__file__).resolve().parent.parent / "runs"
 
 
+def _finite_nonnegative_float(value: str) -> float:
+    try:
+        parsed = float(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("must be a number") from exc
+    if not math.isfinite(parsed) or parsed < 0:
+        raise argparse.ArgumentTypeError("must be finite and non-negative")
+    return parsed
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="swarm",
@@ -31,7 +42,7 @@ def build_parser() -> argparse.ArgumentParser:
     run = sub.add_parser("run", help="dispatch missions (loop or single wave)")
     run.add_argument(
         "--hours",
-        type=float,
+        type=_finite_nonnegative_float,
         default=0.0,
         help="time budget in hours; 0 means a single wave",
     )

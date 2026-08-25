@@ -121,3 +121,18 @@ class TestConfig:
         args = build_parser().parse_args(argv)
         with pytest.raises(ValueError):
             _effective_config(args)
+
+    @pytest.mark.parametrize("value", ["-1", "nan", "inf", "-inf"])
+    def test_cli_hours_rejects_unbounded_or_negative_values(self, value):
+        with pytest.raises(SystemExit) as exc_info:
+            build_parser().parse_args(["run", "--hours", value])
+        assert exc_info.value.code == 2
+
+    def test_cli_hours_accepts_finite_fraction(self):
+        args = build_parser().parse_args(["run", "--hours", "0.25"])
+        assert args.hours == pytest.approx(0.25)
+
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+    def test_config_interval_rejects_non_finite_values(self, value):
+        with pytest.raises(ValueError, match="finite"):
+            SwarmConfig(interval_min=value)
