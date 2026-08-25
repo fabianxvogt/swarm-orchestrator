@@ -23,6 +23,11 @@
 
 ## Done
 
+- 2026-08-25: status now rejects JSON-valid runtime dispatches whose `project`
+  field has surrounding whitespace. Such records no longer inflate dispatch
+  totals or bypass same-wave duplicate-project accounting. [INCREMENTAL /
+  EMPIRICAL status-contract regression]
+
 - 2026-08-25: status now validates present optional fields on non-null finding
   payloads (`type`, `projects`, `experiment`, and `attempt`) against the
   runner's serialized types. A malformed second-attempt finding can no longer

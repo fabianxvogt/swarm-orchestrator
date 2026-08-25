@@ -113,8 +113,8 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
    exact provider cost remains unavailable until notebooks record pricing data.
    JSON-valid finding events with non-object, non-null payloads are reported as
    malformed instead of being counted as findings.
-   Runtime dispatch payloads require a non-empty string `project` field; dry-run
-   dispatches retain their separate brief-string contract.
+   Runtime dispatch payloads require a non-empty, trimmed string `project` field;
+   dry-run dispatches retain their separate brief-string contract.
    JSON-valid retry events with non-object payloads or missing/wrongly typed
    `reason` and `attempt` fields are reported as malformed instead of being
    counted as retries.

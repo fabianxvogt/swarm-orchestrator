@@ -16,6 +16,8 @@ Entry point for the swarm implementation in this project.
   — bounded validation of runtime notebook event sequences
 - [`agent-wave-2026-08-25-dispatch-payload-validation.md`](agent-wave-2026-08-25-dispatch-payload-validation.md)
   — object validation for runtime dispatch event payloads
+- [`agent-wave-2026-08-25-dispatch-project-validation.md`](agent-wave-2026-08-25-dispatch-project-validation.md)
+  — rejects padded runtime dispatch project identifiers before project accounting
 - [`agent-wave-2026-08-25-retry-payload-validation.md`](agent-wave-2026-08-25-retry-payload-validation.md)
   — object and required-field validation for retry event payloads
 - [`agent-wave-2026-08-25-finding-payload-validation.md`](agent-wave-2026-08-25-finding-payload-validation.md)

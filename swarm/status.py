@@ -297,11 +297,15 @@ def _valid_retry_payload(payload: object) -> bool:
 
 
 def _valid_dispatch_payload(payload: object) -> bool:
-    """Return whether a runtime dispatch has its required project field."""
+    """Return whether a runtime dispatch has its canonical project field."""
     if not isinstance(payload, dict):
         return False
     project = payload.get("project")
-    return isinstance(project, str) and bool(project.strip())
+    return (
+        isinstance(project, str)
+        and bool(project.strip())
+        and project == project.strip()
+    )
 
 
 def _valid_result_payload(payload: object) -> bool:

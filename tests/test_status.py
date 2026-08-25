@@ -378,6 +378,30 @@ def test_status_reports_dispatch_with_invalid_required_project_without_counting_
     assert summary.contract_violations == 0
 
 
+def test_status_rejects_padded_project_without_hiding_duplicate_dispatch(
+    tmp_path,
+):
+    run = tmp_path / "20260825-120000"
+    for agent, project in (
+        ("agent-1-w120001", "validation/project-1"),
+        ("agent-2-w120001", " validation/project-1 "),
+    ):
+        notebook = Notebook(run)
+        notebook.log(agent, "dispatch", {"project": project})
+        notebook.log(
+            agent,
+            "result",
+            {"returncode": 0, "timed_out": False, "stdout_chars": 0},
+        )
+        notebook.log(agent, "finding", None)
+
+    summary = summarize_runs(tmp_path)[0]
+
+    assert summary.dispatches == 1
+    assert summary.malformed_records == 1
+    assert summary.contract_violations == 0
+
+
 def test_status_flags_non_object_retry_between_results(tmp_path):
     run = tmp_path / "20260825-120000"
     notebook = Notebook(run)
