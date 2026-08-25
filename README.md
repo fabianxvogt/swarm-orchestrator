@@ -118,6 +118,10 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
    Scheduler wave assembly applies the same non-empty, trimmed project boundary
    before lexical identity deduplication, so invalid configured entries cannot
    become dispatches that status would later reject.
+   If bounded mission generation finds no safe candidate, the wave completes
+   empty instead of raising; duration runs stop after an empty wave, so a
+   zero-interval configuration cannot spin forever on invalid or duplicate
+   candidates.
    JSON-valid retry events with non-object payloads or missing/wrongly typed
    `reason` and `attempt` fields are reported as malformed instead of being
    counted as retries.

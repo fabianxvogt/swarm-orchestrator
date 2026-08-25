@@ -311,6 +311,65 @@ def test_wave_skips_empty_project_identifiers(tmp_path):
     assert [mission.project for _, mission in jobs] == ["project-a"]
 
 
+def test_wave_returns_empty_when_all_projects_are_safety_denied(tmp_path):
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
+        [Project(path="service-account/project", name="denied")],
+        Notebook(tmp_path / "run"),
+    )
+
+    assert swarm.wave(swarm.config.parallel) == []
+
+
+@pytest.mark.parametrize(
+    ("generated_project", "expected_projects"),
+    [("", []), ("project-a", ["project-a"])],
+)
+def test_wave_bounds_repeated_invalid_or_duplicate_mission_generation(
+    monkeypatch, tmp_path, generated_project, expected_projects
+):
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
+        [
+            Project(path="project-a", name="a"),
+            Project(path="project-b", name="b"),
+        ],
+        Notebook(tmp_path / "run"),
+    )
+    calls = []
+
+    def invalid_mission():
+        calls.append(1)
+        return Mission("EXPLORE", generated_project, None, "brief")
+
+    monkeypatch.setattr(swarm, "next_mission", invalid_mission)
+
+    jobs = swarm.wave(swarm.config.parallel)
+
+    assert [mission.project for _, mission in jobs] == expected_projects
+    assert len(calls) == len(runner._MISSION_ROTATION) * 2 + 8
+
+
+def test_run_for_hours_stops_after_an_empty_wave(monkeypatch, tmp_path):
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
+        [Project(path="", name="empty")],
+        Notebook(tmp_path / "run"),
+    )
+
+    calls = []
+    real_run_wave = swarm.run_wave
+
+    def counted_run_wave():
+        calls.append(1)
+        return real_run_wave()
+
+    monkeypatch.setattr(swarm, "run_wave", counted_run_wave)
+
+    assert swarm.run_for_hours(1.0, 0.0) == 0
+    assert len(calls) == 1
+
+
 def test_wave_keeps_distinct_lexical_project_identifiers(tmp_path):
     swarm = runner.Swarm(
         SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),

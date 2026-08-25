@@ -33,6 +33,10 @@ class ProvenanceError(Exception):
     """Raised when an opt-in BUILD provenance commit cannot be made safely."""
 
 
+class NoDispatchableMission(RuntimeError):
+    """Raised when a bounded mission scan finds no safe candidate."""
+
+
 @dataclass(frozen=True)
 class GitSnapshot:
     root: Path
@@ -357,6 +361,7 @@ class Swarm:
         self.dry_run = dry_run
         self.mission_index = 0
         self.findings: list[Finding] = []
+        self._last_wave_had_jobs = False
 
     def next_mission(self) -> Mission:
         guard = 0
@@ -369,7 +374,9 @@ class Swarm:
                 continue
             self.mission_index += 1
             return mission
-        raise RuntimeError("no dispatchable mission: every candidate was denied")
+        raise NoDispatchableMission(
+            "no dispatchable mission: every candidate was denied"
+        )
 
     def wave(self, size: int) -> list[tuple[str, Mission]]:
         jobs: list[tuple[str, Mission]] = []
@@ -390,7 +397,10 @@ class Swarm:
         )
         while len(jobs) < target and attempts < attempt_limit:
             attempts += 1
-            mission = self.next_mission()
+            try:
+                mission = self.next_mission()
+            except NoDispatchableMission:
+                break
             if not is_valid_project_identifier(mission.project):
                 continue
             identity = project_identity(mission.project)
@@ -403,6 +413,11 @@ class Swarm:
         return jobs
 
     def run_wave(self) -> int:
+        collected, had_jobs = self._run_wave()
+        self._last_wave_had_jobs = had_jobs
+        return collected
+
+    def _run_wave(self) -> tuple[int, bool]:
         wave_id = time.strftime("%H%M%S")
         jobs = self.wave(self.config.parallel)
         collected = 0
@@ -413,7 +428,7 @@ class Swarm:
                     + (f" <-> {mission.partner}" if mission.partner else "")
                 )
                 self.notebook.log(agent, "dispatch_dry_run", mission.brief)
-            return 0
+            return 0, bool(jobs)
         with ThreadPoolExecutor(max_workers=self.config.parallel) as pool:
             futures = [
                 (
@@ -433,7 +448,7 @@ class Swarm:
                 if ok and finding is not None:
                     self.findings.append(finding)
                     collected += 1
-        return collected
+        return collected, bool(jobs)
 
     def run_for_hours(self, hours: float, interval_min: float) -> int:
         if not math.isfinite(hours) or hours < 0:
@@ -444,6 +459,8 @@ class Swarm:
         total = 0
         while not STOP.is_set() and time.monotonic() < deadline:
             total += self.run_wave()
+            if not self._last_wave_had_jobs:
+                break
             remaining = deadline - time.monotonic()
             wait = min(interval_min * 60.0, max(remaining, 0.0))
             if wait > 0 and not STOP.is_set():

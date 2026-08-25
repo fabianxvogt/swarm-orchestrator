@@ -23,6 +23,13 @@
 
 ## Done
 
+- 2026-08-25: wave assembly now treats an exhausted safety-denied mission scan
+  as an empty wave, and duration runs stop after any empty wave. This prevents
+  all-invalid configurations from raising unexpectedly or spinning through
+  zero-interval waves; repeated invalid or duplicate mission candidates remain
+  bounded by the existing scan limit. [INCREMENTAL / EMPIRICAL scheduler
+  termination regression]
+
 - 2026-08-25: scheduler wave assembly now applies the same non-empty, trimmed
   project boundary as runtime status validation. Empty configured identifiers no
   longer schedule a mission that status would discard as malformed; lexical
