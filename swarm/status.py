@@ -271,16 +271,13 @@ def _count_event(event: object, counter: dict[str, int]) -> None:
             return
         counter["findings"] += 1
     elif event_type == "result":
-        if not isinstance(payload, dict):
+        if not _valid_result_payload(payload):
             counter["malformed_records"] += 1
             return
         output_chars = payload.get("stdout_chars", 0)
-        if isinstance(output_chars, int) and output_chars >= 0:
-            counter["output_chars"] += output_chars
+        counter["output_chars"] += output_chars
         returncode = payload.get("returncode")
-        if payload.get("timed_out") or (
-            isinstance(returncode, int) and returncode != 0
-        ):
+        if payload["timed_out"] or returncode != 0:
             counter["failures"] += 1
 
 
@@ -296,6 +293,23 @@ def _valid_retry_payload(payload: object) -> bool:
         and isinstance(attempt, int)
         and not isinstance(attempt, bool)
         and attempt >= 1
+    )
+
+
+def _valid_result_payload(payload: object) -> bool:
+    """Return whether a result has the runner's stable summary fields."""
+    if not isinstance(payload, dict):
+        return False
+    returncode = payload.get("returncode")
+    timed_out = payload.get("timed_out")
+    stdout_chars = payload.get("stdout_chars")
+    return (
+        isinstance(returncode, int)
+        and not isinstance(returncode, bool)
+        and isinstance(timed_out, bool)
+        and isinstance(stdout_chars, int)
+        and not isinstance(stdout_chars, bool)
+        and stdout_chars >= 0
     )
 
 
