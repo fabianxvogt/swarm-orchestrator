@@ -321,6 +321,13 @@ def _valid_result_payload(payload: object) -> bool:
     )
 
 
+def _valid_result_event(event: dict) -> bool:
+    """Return whether an event is a valid runner result record."""
+    return event.get("type") == "result" and _valid_result_payload(
+        event.get("payload")
+    )
+
+
 def _valid_finding_payload(payload: object) -> bool:
     """Return whether a non-null finding has the parser's required fields."""
     if not isinstance(payload, dict):
@@ -360,8 +367,7 @@ def _attempts_are_coherent(events: list[dict]) -> bool:
     result_indexes = [
         index
         for index, event in enumerate(events)
-        if event.get("type") == "result"
-        and _valid_result_payload(event.get("payload"))
+        if _valid_result_event(event)
     ]
     for expected, result_index in enumerate(result_indexes, start=1):
         result = events[result_index]
@@ -433,8 +439,7 @@ def _contract_violations(events: list[dict]) -> int:
     results = [
         event
         for event in events
-        if event.get("type") == "result"
-        and _valid_result_payload(event.get("payload"))
+        if _valid_result_event(event)
     ]
     retries = [
         event
@@ -489,7 +494,7 @@ def _contract_violations(events: list[dict]) -> int:
         result_indexes = [
             index
             for index, event in enumerate(events)
-            if event.get("type") == "result"
+            if _valid_result_event(event)
         ]
         retry_indexes = [
             index
@@ -511,6 +516,10 @@ def _contract_violations(events: list[dict]) -> int:
             if previous is None or previous.get("type") != "result":
                 violations += 1
         if event.get("type") != "result":
+            continue
+        if not _valid_result_event(event):
+            if results:
+                violations += 1
             continue
         if index + 1 >= len(events) or not _valid_finding_event(events[index + 1]):
             violations += 1

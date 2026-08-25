@@ -234,6 +234,60 @@ def test_status_flags_retry_with_incoherent_attempt_number(tmp_path):
     assert summary.contract_violations == 1
 
 
+def test_status_does_not_accept_malformed_result_as_extra_retry_sequence(
+    tmp_path,
+):
+    run = tmp_path / "20260825-120000"
+    notebook = Notebook(run)
+    notebook.log(
+        "agent-1-w120001", "dispatch", {"project": "validation/project-1"}
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0, "attempt": 1},
+    )
+    notebook.log("agent-1-w120001", "finding", None)
+    notebook.log(
+        "agent-1-w120001",
+        "retry",
+        {"reason": "missing_or_malformed_finding", "attempt": 2},
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0, "attempt": 2},
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "finding",
+        {"title": "recovered", "claim": "EMPIRICAL: valid", "attempt": 2},
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": "0", "timed_out": False, "stdout_chars": 0},
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "finding",
+        {
+            "title": "orphaned",
+            "claim": "EMPIRICAL: invalid result preceded this",
+        },
+    )
+
+    summary = summarize_runs(tmp_path)[0]
+
+    assert summary.dispatches == 1
+    assert summary.retries == 1
+    assert summary.findings == 2
+    assert summary.failures == 0
+    assert summary.output_chars == 0
+    assert summary.malformed_records == 1
+    assert summary.contract_violations == 1
+
+
 def test_status_reports_non_object_dispatch_payload_without_counting_dispatch(
     tmp_path,
 ):

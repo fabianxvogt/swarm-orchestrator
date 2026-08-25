@@ -23,6 +23,12 @@
 
 ## Done
 
+- 2026-08-25: status now requires JSON-valid `result` events to pass the same
+  payload validation used by result counts before they can satisfy retry
+  ordering, attempt coherence, or result/finding sequencing. A malformed
+  result cannot be hidden after an otherwise complete bounded retry. [INCREMENTAL
+  / EMPIRICAL status-contract regression]
+
 - 2026-08-25: status now excludes malformed JSON-valid `retry` events from
   result/retry ordering checks, so an invalid retry cannot make two results
   appear like a complete bounded retry sequence while `retries=0`. [INCREMENTAL
