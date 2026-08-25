@@ -18,6 +18,8 @@ Entry point for the swarm implementation in this project.
   — object validation for runtime dispatch event payloads
 - [`agent-wave-2026-08-25-retry-payload-validation.md`](agent-wave-2026-08-25-retry-payload-validation.md)
   — object and required-field validation for retry event payloads
+- [`agent-wave-2026-08-25-finding-payload-validation.md`](agent-wave-2026-08-25-finding-payload-validation.md)
+  — required-field validation and sequencing for runtime finding payloads
 - `swarm/` — implementation
 - `tests/` — verification
 

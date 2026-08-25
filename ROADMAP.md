@@ -23,6 +23,11 @@
 
 ## Done
 
+- 2026-08-25: status now validates non-null runtime `finding` payloads for the
+  parser's required non-empty string `title` and `claim` fields; malformed
+  findings are excluded from totals and cannot satisfy result/finding
+  sequencing. [EMPIRICAL status-contract regression]
+
 - 2026-08-25: status now requires runtime `dispatch` payloads to contain a
   non-empty string `project`, so malformed dispatches are reported and cannot
   inflate dispatch totals or duplicate-project checks. [EMPIRICAL

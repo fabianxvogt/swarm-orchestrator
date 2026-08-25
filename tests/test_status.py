@@ -31,7 +31,11 @@ def test_summarize_runs_groups_wave_events_and_counts_failures(tmp_path):
         "result",
         {"returncode": 0, "timed_out": False, "stdout_chars": 0},
     )
-    notebook.log("agent-1-w120001", "finding", {"title": "one"})
+    notebook.log(
+        "agent-1-w120001",
+        "finding",
+        {"title": "one", "claim": "EMPIRICAL: valid"},
+    )
     notebook.log(
         "agent-2-w120001", "dispatch", {"project": "validation/project-2"}
     )
@@ -96,7 +100,33 @@ def test_status_reports_non_object_finding_payload_without_counting_finding(
 
     assert summary.findings == 0
     assert summary.malformed_records == 1
-    assert summary.contract_violations == 0
+    assert summary.contract_violations == 1
+
+
+def test_status_rejects_finding_with_non_string_title_and_flags_sequence(
+    tmp_path,
+):
+    run = tmp_path / "20260825-120000"
+    notebook = Notebook(run)
+    notebook.log(
+        "agent-1-w120001", "dispatch", {"project": "validation/project-1"}
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0},
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "finding",
+        {"title": 7, "claim": "EMPIRICAL: malformed title"},
+    )
+
+    summary = summarize_runs(tmp_path)[0]
+
+    assert summary.findings == 0
+    assert summary.malformed_records == 1
+    assert summary.contract_violations == 1
 
 
 def test_status_reports_non_object_dispatch_payload_without_counting_dispatch(
@@ -110,7 +140,11 @@ def test_status_reports_non_object_dispatch_payload_without_counting_dispatch(
         "result",
         {"returncode": 0, "timed_out": False, "stdout_chars": 0},
     )
-    notebook.log("agent-1-w120001", "finding", {"title": "one"})
+    notebook.log(
+        "agent-1-w120001",
+        "finding",
+        {"title": "one", "claim": "EMPIRICAL: valid"},
+    )
 
     summary = summarize_runs(tmp_path)[0]
 
@@ -162,7 +196,11 @@ def test_status_reports_non_object_retry_payload_without_counting_retry(tmp_path
         "result",
         {"returncode": 0, "timed_out": False, "stdout_chars": 0},
     )
-    notebook.log("agent-1-w120001", "finding", {"title": "recovered"})
+    notebook.log(
+        "agent-1-w120001",
+        "finding",
+        {"title": "recovered", "claim": "EMPIRICAL: valid"},
+    )
 
     summary = summarize_runs(tmp_path)[0]
 
@@ -202,7 +240,11 @@ def test_status_reports_retry_with_invalid_required_fields_without_counting_retr
         "result",
         {"returncode": 0, "timed_out": False, "stdout_chars": 0},
     )
-    notebook.log("agent-1-w120001", "finding", {"title": "recovered"})
+    notebook.log(
+        "agent-1-w120001",
+        "finding",
+        {"title": "recovered", "claim": "EMPIRICAL: valid"},
+    )
 
     summary = summarize_runs(tmp_path)[0]
 
@@ -229,7 +271,11 @@ def test_status_reports_result_with_invalid_fields_without_counting_result(
         "agent-1-w120001", "dispatch", {"project": "validation/project-1"}
     )
     notebook.log("agent-1-w120001", "result", payload)
-    notebook.log("agent-1-w120001", "finding", {"title": "recovered"})
+    notebook.log(
+        "agent-1-w120001",
+        "finding",
+        {"title": "recovered", "claim": "EMPIRICAL: valid"},
+    )
 
     summary = summarize_runs(tmp_path)[0]
 
@@ -282,7 +328,11 @@ def test_status_json_has_versioned_run_and_wave_totals(tmp_path):
         "result",
         {"returncode": 0, "timed_out": False, "stdout_chars": 8},
     )
-    notebook.log("agent-1-w120001", "finding", {"title": "one"})
+    notebook.log(
+        "agent-1-w120001",
+        "finding",
+        {"title": "one", "claim": "EMPIRICAL: valid"},
+    )
 
     payload = json.loads(format_status_json(summarize_runs(tmp_path), tmp_path))
 

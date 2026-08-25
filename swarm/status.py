@@ -266,7 +266,7 @@ def _count_event(event: object, counter: dict[str, int]) -> None:
     elif event_type == "finding":
         if payload is None:
             return
-        if not isinstance(payload, dict):
+        if not _valid_finding_payload(payload):
             counter["malformed_records"] += 1
             return
         counter["findings"] += 1
@@ -318,6 +318,28 @@ def _valid_result_payload(payload: object) -> bool:
         and isinstance(stdout_chars, int)
         and not isinstance(stdout_chars, bool)
         and stdout_chars >= 0
+    )
+
+
+def _valid_finding_payload(payload: object) -> bool:
+    """Return whether a non-null finding has the parser's required fields."""
+    if not isinstance(payload, dict):
+        return False
+    title = payload.get("title")
+    claim = payload.get("claim")
+    return (
+        isinstance(title, str)
+        and bool(title.strip())
+        and isinstance(claim, str)
+        and bool(claim.strip())
+    )
+
+
+def _valid_finding_event(event: dict) -> bool:
+    """Return whether an event is a valid runner finding record."""
+    return event.get("type") == "finding" and (
+        event.get("payload") is None
+        or _valid_finding_payload(event.get("payload"))
     )
 
 
@@ -409,7 +431,7 @@ def _contract_violations(events: list[dict]) -> int:
     for index, event in enumerate(events):
         if event.get("type") != "result":
             continue
-        if index + 1 >= len(events) or events[index + 1].get("type") != "finding":
+        if index + 1 >= len(events) or not _valid_finding_event(events[index + 1]):
             violations += 1
 
     return violations

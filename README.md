@@ -118,6 +118,9 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
    JSON-valid retry events with non-object payloads or missing/wrongly typed
    `reason` and `attempt` fields are reported as malformed instead of being
    counted as retries.
+   JSON-valid non-null finding events require non-empty string `title` and
+   `claim` fields; malformed findings are excluded from finding totals and do
+   not satisfy result/finding sequencing.
    The CLI and `summarize_runs` API require a positive integer `limit`; malformed
    limits fail closed before notebook inspection.
 8. `commit_per_finding` is opt-in and applies only to successful BUILD missions;
