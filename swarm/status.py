@@ -9,6 +9,9 @@ from pathlib import Path
 
 
 _WAVE_RE = re.compile(r"-w(?P<wave>\d{6})$")
+_RUN_RE = re.compile(
+    r"^(?P<timestamp>\d{8}-\d{6})(?:-(?P<collision>\d+))?$"
+)
 
 
 @dataclass(frozen=True)
@@ -71,7 +74,7 @@ def summarize_runs(runs_dir: Path, limit: int = 10) -> list[RunSummary]:
 
     run_dirs = sorted(
         (path for path in runs_dir.iterdir() if path.is_dir()),
-        key=lambda path: path.name,
+        key=_run_sort_key,
         reverse=True,
     )[:limit]
     return [_summarize_run(run_dir) for run_dir in run_dirs]
@@ -243,6 +246,15 @@ def _count_event(event: object, counter: dict[str, int]) -> None:
 def _wave_name(stem: str) -> str:
     match = _WAVE_RE.search(stem)
     return match.group("wave") if match else "unassigned"
+
+
+def _run_sort_key(path: Path) -> tuple[int, str, int, str]:
+    """Order generated run names by timestamp and numeric collision suffix."""
+    match = _RUN_RE.fullmatch(path.name)
+    if match:
+        collision = int(match.group("collision") or 0)
+        return (1, match.group("timestamp"), collision, path.name)
+    return (0, path.name, 0, path.name)
 
 
 def _wave_sort_key(name: str) -> tuple[int, str]:

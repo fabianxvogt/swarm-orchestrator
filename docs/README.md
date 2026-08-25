@@ -6,6 +6,8 @@ Entry point for the swarm implementation in this project.
 - [`../ROADMAP.md`](../ROADMAP.md) — current work
 - [`long-run-validation-checklist.md`](long-run-validation-checklist.md) — safe
   local preflight and owner-run evidence criteria for the remaining roadmap item
+- [`agent-wave-2026-08-25-status-ordering.md`](agent-wave-2026-08-25-status-ordering.md)
+  — deterministic ordering for same-second run-directory collisions
 - `swarm/` — implementation
 - `tests/` — verification
 

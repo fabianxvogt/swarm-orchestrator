@@ -66,6 +66,23 @@ def test_status_skips_malformed_records_and_is_bounded(tmp_path):
     assert "cost=unavailable" in report
 
 
+def test_summarize_runs_orders_numeric_collision_suffixes(tmp_path):
+    for name in (
+        "20260825-120000",
+        "20260825-120000-2",
+        "20260825-120000-10",
+    ):
+        (tmp_path / name).mkdir()
+
+    summaries = summarize_runs(tmp_path)
+
+    assert [summary.name for summary in summaries] == [
+        "20260825-120000-10",
+        "20260825-120000-2",
+        "20260825-120000",
+    ]
+
+
 def test_status_cli_does_not_require_portfolio_inventory(tmp_path, capsys):
     run = tmp_path / "20260825-120000"
     run.mkdir()
