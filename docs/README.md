@@ -21,6 +21,9 @@ Entry point for the swarm implementation in this project.
 - [`agent-wave-2026-08-25-dispatch-project-identity.md`](agent-wave-2026-08-25-dispatch-project-identity.md)
   — compares valid path-like project identifiers by lexical identity for
   same-wave duplicate accounting
+- [`agent-wave-2026-08-25-project-identity-boundary.md`](agent-wave-2026-08-25-project-identity-boundary.md)
+  — shares lexical identity between wave scheduling and status accounting,
+  with explicit non-conflation boundaries
 - [`agent-wave-2026-08-25-retry-payload-validation.md`](agent-wave-2026-08-25-retry-payload-validation.md)
   — object and required-field validation for retry event payloads
 - [`agent-wave-2026-08-25-finding-payload-validation.md`](agent-wave-2026-08-25-finding-payload-validation.md)

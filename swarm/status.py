@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
-import posixpath
 import re
 from dataclasses import dataclass
 from pathlib import Path
+
+from .project_identity import project_identity
 
 
 _WAVE_RE = re.compile(r"-w(?P<wave>\d{6})$")
@@ -453,15 +454,8 @@ def _duplicate_primary_project_count(projects: list[str]) -> int:
 
 
 def _project_identity(project: str) -> str:
-    """Return the lexical path identity used for duplicate accounting.
-
-    Runtime project identifiers are relative POSIX-style paths from the
-    configured workdir. Keep the serialized value and dispatch count intact,
-    but collapse aliases such as ``./project`` and ``project/`` when checking
-    same-wave uniqueness. Filesystem-dependent aliases remain outside this
-    status-only check because the notebook does not carry the workdir.
-    """
-    return posixpath.normpath(project)
+    """Return the lexical path identity used for duplicate accounting."""
+    return project_identity(project)
 
 
 def _contract_violations(events: list[dict]) -> int:

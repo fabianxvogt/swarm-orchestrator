@@ -124,6 +124,8 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
    Same-wave duplicate-project accounting uses lexical path identity while
    preserving the original dispatch payload and count; filesystem-dependent
    aliases remain outside the status-only check.
+   Wave assembly uses that same lexical identity, so repeated-separator and
+   dot-segment aliases cannot schedule two missions for one configured target.
    When present, finding `type` must be a string, `projects` a list of strings,
    `experiment` a string or `null`, and `attempt` a positive integer; omitted
    optional fields remain readable for older notebooks.

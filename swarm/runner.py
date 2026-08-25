@@ -16,6 +16,7 @@ from .config import SwarmConfig
 from .findings import Finding, parse_finding
 from .missions import SAFETY_PREAMBLE, Mission, build_brief
 from .notebook import Notebook
+from .project_identity import project_identity
 from .registry import Project
 
 STOP = threading.Event()
@@ -372,7 +373,10 @@ class Swarm:
 
     def wave(self, size: int) -> list[tuple[str, Mission]]:
         jobs: list[tuple[str, Mission]] = []
-        target = min(size, len({project.path for project in self.projects}))
+        target = min(
+            size,
+            len({project_identity(project.path) for project in self.projects}),
+        )
         seen_projects: set[str] = set()
         attempts = 0
         attempt_limit = (
@@ -381,9 +385,10 @@ class Swarm:
         while len(jobs) < target and attempts < attempt_limit:
             attempts += 1
             mission = self.next_mission()
-            if mission.project in seen_projects:
+            identity = project_identity(mission.project)
+            if identity in seen_projects:
                 continue
-            seen_projects.add(mission.project)
+            seen_projects.add(identity)
             slot = len(jobs)
             agent = f"agent-{slot + 1}"
             jobs.append((agent, mission))

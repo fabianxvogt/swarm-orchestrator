@@ -281,6 +281,39 @@ def test_wave_dispatches_at_most_one_primary_mission_per_project(tmp_path):
     assert len({mission.project for _, mission in jobs}) == len(jobs)
 
 
+def test_wave_deduplicates_lexical_project_aliases(tmp_path):
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
+        [
+            Project(path="validation/project-1", name="project-1"),
+            Project(path="validation//project-1", name="project-1"),
+        ],
+        Notebook(tmp_path / "run"),
+    )
+
+    jobs = swarm.wave(swarm.config.parallel)
+
+    assert [mission.project for _, mission in jobs] == ["validation/project-1"]
+
+
+def test_wave_keeps_distinct_lexical_project_identifiers(tmp_path):
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
+        [
+            Project(path="validation/project-1", name="project-1"),
+            Project(path="validation/project_1", name="project_1"),
+        ],
+        Notebook(tmp_path / "run"),
+    )
+
+    jobs = swarm.wave(swarm.config.parallel)
+
+    assert [mission.project for _, mission in jobs] == [
+        "validation/project-1",
+        "validation/project_1",
+    ]
+
+
 @pytest.mark.parametrize(
     ("hours", "interval_min", "message"),
     [

@@ -23,6 +23,12 @@
 
 ## Done
 
+- 2026-08-25: wave assembly now shares status's lexical project identity, so
+  valid aliases such as `validation/project-1` and
+  `validation//project-1` cannot schedule two missions for one target.
+  Distinct identifiers remain distinct; filesystem-dependent canonicalization
+  remains outside the contract. [INCREMENTAL / EMPIRICAL scheduler regression]
+
 - 2026-08-25: status duplicate-project accounting now compares valid runtime
   project identifiers by lexical path identity, so aliases such as
   `validation/project-1` and `./validation/project-1` cannot bypass the
