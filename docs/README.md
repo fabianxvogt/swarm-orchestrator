@@ -24,6 +24,8 @@ Entry point for the swarm implementation in this project.
   — rejects finding events that do not immediately follow a result
 - [`agent-wave-2026-08-25-retry-after-finding.md`](agent-wave-2026-08-25-retry-after-finding.md)
   — flags retries after an already parsed first finding
+- [`agent-wave-2026-08-25-attempt-coherence.md`](agent-wave-2026-08-25-attempt-coherence.md)
+  — validates bounded retry/result/finding attempt numbering
 - `swarm/` — implementation
 - `tests/` — verification
 

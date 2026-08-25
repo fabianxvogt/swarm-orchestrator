@@ -124,6 +124,10 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
    Status also flags a retry whose first result is already followed by a
    non-null valid finding, because the runner retries only after `finding:
    null`.
+   When runner-emitted `attempt` metadata is present, status also requires the
+   first result/finding pair to be attempt 1 and the bounded retry pair to be
+   attempt 2; older records that omit optional result/finding metadata remain
+   readable.
    The CLI and `summarize_runs` API require a positive integer `limit`; malformed
    limits fail closed before notebook inspection.
 8. `commit_per_finding` is opt-in and applies only to successful BUILD missions;

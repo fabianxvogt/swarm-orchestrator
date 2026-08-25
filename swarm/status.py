@@ -343,6 +343,53 @@ def _valid_finding_event(event: dict) -> bool:
     )
 
 
+def _attempt_matches(payload: object, expected: int) -> bool:
+    """Return whether optional runner attempt metadata matches its pair."""
+    if not isinstance(payload, dict) or "attempt" not in payload:
+        return True
+    attempt = payload["attempt"]
+    return (
+        isinstance(attempt, int)
+        and not isinstance(attempt, bool)
+        and attempt == expected
+    )
+
+
+def _attempts_are_coherent(events: list[dict]) -> bool:
+    """Check the runner's bounded attempt numbering when metadata is present."""
+    result_indexes = [
+        index
+        for index, event in enumerate(events)
+        if event.get("type") == "result"
+        and _valid_result_payload(event.get("payload"))
+    ]
+    for expected, result_index in enumerate(result_indexes, start=1):
+        result = events[result_index]
+        if not _attempt_matches(result.get("payload"), expected):
+            return False
+        finding_index = result_index + 1
+        if finding_index >= len(events):
+            continue
+        finding = events[finding_index]
+        finding_payload = finding.get("payload")
+        if (
+            finding.get("type") == "finding"
+            and finding_payload is not None
+            and _valid_finding_payload(finding_payload)
+            and not _attempt_matches(finding_payload, expected)
+        ):
+            return False
+
+    for event in events:
+        if (
+            event.get("type") == "retry"
+            and _valid_retry_payload(event.get("payload"))
+            and not _attempt_matches(event.get("payload"), 2)
+        ):
+            return False
+    return True
+
+
 def _primary_project(event: dict) -> str | None:
     if event.get("type") != "dispatch":
         return None
@@ -448,6 +495,9 @@ def _contract_violations(events: list[dict]) -> int:
             result_indexes[0] < retry_indexes[0] < result_indexes[1]
         ):
             violations += 1
+
+    if not _attempts_are_coherent(events):
+        violations += 1
 
     for index, event in enumerate(events):
         if event.get("type") == "finding":

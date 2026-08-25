@@ -23,6 +23,11 @@
 
 ## Done
 
+- 2026-08-25: status now flags JSON-valid retry/result/finding sequences whose
+  runner-emitted attempt metadata violates the bounded attempt-1/attempt-2
+  protocol; optional metadata omitted by older notebooks remains compatible.
+  [INCREMENTAL / EMPIRICAL status-contract regression]
+
 - 2026-08-25: status now flags a JSON-valid retry whose first result is already
   followed by a parsed finding; the runner's retry path requires that first
   finding record to be `null`. Provider dispatch and retry behavior are

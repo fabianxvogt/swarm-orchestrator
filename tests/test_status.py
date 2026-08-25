@@ -198,6 +198,42 @@ def test_status_flags_retry_after_first_valid_finding(tmp_path):
     assert summary.contract_violations == 1
 
 
+def test_status_flags_retry_with_incoherent_attempt_number(tmp_path):
+    run = tmp_path / "20260825-120000"
+    notebook = Notebook(run)
+    notebook.log(
+        "agent-1-w120001", "dispatch", {"project": "validation/project-1"}
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0, "attempt": 1},
+    )
+    notebook.log("agent-1-w120001", "finding", None)
+    notebook.log(
+        "agent-1-w120001",
+        "retry",
+        {"reason": "missing_or_malformed_finding", "attempt": 3},
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0, "attempt": 3},
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "finding",
+        {"title": "recovered", "claim": "EMPIRICAL: valid", "attempt": 3},
+    )
+
+    summary = summarize_runs(tmp_path)[0]
+
+    assert summary.retries == 1
+    assert summary.findings == 1
+    assert summary.malformed_records == 0
+    assert summary.contract_violations == 1
+
+
 def test_status_reports_non_object_dispatch_payload_without_counting_dispatch(
     tmp_path,
 ):
@@ -465,7 +501,7 @@ def test_status_reports_retry_events_without_changing_dispatch_count(tmp_path):
     notebook.log(
         "agent-1-w120001",
         "result",
-        {"returncode": 0, "timed_out": False, "stdout_chars": 0},
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0, "attempt": 1},
     )
     notebook.log("agent-1-w120001", "finding", None)
     notebook.log(
@@ -476,7 +512,7 @@ def test_status_reports_retry_events_without_changing_dispatch_count(tmp_path):
     notebook.log(
         "agent-1-w120001",
         "result",
-        {"returncode": 0, "timed_out": False, "stdout_chars": 0},
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0, "attempt": 2},
     )
     notebook.log("agent-1-w120001", "finding", None)
 
