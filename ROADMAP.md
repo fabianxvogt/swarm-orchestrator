@@ -23,6 +23,12 @@
 
 ## Done
 
+- 2026-08-25: status now validates present optional fields on non-null finding
+  payloads (`type`, `projects`, `experiment`, and `attempt`) against the
+  runner's serialized types. A malformed second-attempt finding can no longer
+  look like a counted, complete retry; omitted optional fields remain compatible.
+  [INCREMENTAL / EMPIRICAL status-contract regression]
+
 - 2026-08-25: status now requires JSON-valid `result` events to pass the same
   payload validation used by result counts before they can satisfy retry
   ordering, attempt coherence, or result/finding sequencing. A malformed

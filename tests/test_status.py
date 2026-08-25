@@ -129,6 +129,47 @@ def test_status_rejects_finding_with_non_string_title_and_flags_sequence(
     assert summary.contract_violations == 1
 
 
+def test_status_rejects_malformed_optional_metadata_on_retry_finding(tmp_path):
+    run = tmp_path / "20260825-120000"
+    notebook = Notebook(run)
+    notebook.log(
+        "agent-1-w120001", "dispatch", {"project": "validation/project-1"}
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0, "attempt": 1},
+    )
+    notebook.log("agent-1-w120001", "finding", None)
+    notebook.log(
+        "agent-1-w120001",
+        "retry",
+        {"reason": "missing_or_malformed_finding", "attempt": 2},
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0, "attempt": 2},
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "finding",
+        {
+            "title": "recovered",
+            "claim": "EMPIRICAL: valid required fields",
+            "projects": "not-a-list",
+            "attempt": 2,
+        },
+    )
+
+    summary = summarize_runs(tmp_path)[0]
+
+    assert summary.retries == 1
+    assert summary.findings == 0
+    assert summary.malformed_records == 1
+    assert summary.contract_violations == 1
+
+
 def test_status_flags_finding_after_completed_result_finding_pair(tmp_path):
     run = tmp_path / "20260825-120000"
     notebook = Notebook(run)

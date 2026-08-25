@@ -19,7 +19,8 @@ Entry point for the swarm implementation in this project.
 - [`agent-wave-2026-08-25-retry-payload-validation.md`](agent-wave-2026-08-25-retry-payload-validation.md)
   — object and required-field validation for retry event payloads
 - [`agent-wave-2026-08-25-finding-payload-validation.md`](agent-wave-2026-08-25-finding-payload-validation.md)
-  — required-field validation and sequencing for runtime finding payloads
+  — required/present-optional-field validation and sequencing for runtime
+  finding payloads
 - [`agent-wave-2026-08-25-finding-order-validation.md`](agent-wave-2026-08-25-finding-order-validation.md)
   — rejects finding events that do not immediately follow a result
 - [`agent-wave-2026-08-25-retry-after-finding.md`](agent-wave-2026-08-25-retry-after-finding.md)

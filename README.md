@@ -121,6 +121,9 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
    JSON-valid non-null finding events require non-empty string `title` and
    `claim` fields; malformed findings are excluded from finding totals and do
    not satisfy result/finding sequencing.
+   When present, finding `type` must be a string, `projects` a list of strings,
+   `experiment` a string or `null`, and `attempt` a positive integer; omitted
+   optional fields remain readable for older notebooks.
    Status also flags a retry whose first result is already followed by a
    non-null valid finding, because the runner retries only after `finding:
    null`.

@@ -329,16 +329,46 @@ def _valid_result_event(event: dict) -> bool:
 
 
 def _valid_finding_payload(payload: object) -> bool:
-    """Return whether a non-null finding has the parser's required fields."""
+    """Return whether a non-null finding matches the parser's output shape."""
     if not isinstance(payload, dict):
         return False
     title = payload.get("title")
     claim = payload.get("claim")
-    return (
+    required_fields_valid = (
         isinstance(title, str)
         and bool(title.strip())
         and isinstance(claim, str)
         and bool(claim.strip())
+    )
+    if not required_fields_valid:
+        return False
+
+    finding_type = payload.get("type")
+    projects = payload.get("projects")
+    experiment = payload.get("experiment")
+    attempt = payload.get("attempt")
+    return (
+        ("type" not in payload or isinstance(finding_type, str))
+        and (
+            "projects" not in payload
+            or (
+                isinstance(projects, list)
+                and all(isinstance(project, str) for project in projects)
+            )
+        )
+        and (
+            "experiment" not in payload
+            or experiment is None
+            or isinstance(experiment, str)
+        )
+        and (
+            "attempt" not in payload
+            or (
+                isinstance(attempt, int)
+                and not isinstance(attempt, bool)
+                and attempt >= 1
+            )
+        )
     )
 
 
