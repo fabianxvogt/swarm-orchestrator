@@ -422,7 +422,14 @@ class Swarm:
 
     def _run_wave(self) -> tuple[int, bool]:
         wave_id = time.strftime("%H%M%S")
+        start_mission_index = self.mission_index
         jobs = self.wave(self.config.parallel)
+        if STOP.is_set():
+            # A signal can arrive after run_wave()'s public guard but while
+            # the bounded mission scan is still assembling this wave. Do not
+            # turn that canceled scan into dry-run output or executor work.
+            self.mission_index = start_mission_index
+            return 0, False
         collected = 0
         if self.dry_run:
             for agent, mission in jobs:

@@ -23,6 +23,14 @@
 
 ## Done
 
+- 2026-08-25: `run_wave()` now rechecks the shutdown event after bounded
+  mission assembly. A stop arriving in that narrow pre-dispatch window no
+  longer creates dry-run output, submits dispatch callables, consumes mission
+  state, or marks the canceled wave as having jobs. Focused duration-loop
+  coverage also pins finding accounting after a completed wave and one-wait
+  termination when STOP arrives during an inter-wave interval. [INCREMENTAL /
+  EMPIRICAL STOP timing and accounting regression]
+
 - 2026-08-25: `run_wave()` now honors a pending shutdown request before
   assembling a new wave. This prevents stopped dry-run invocations from
   printing briefs, writing notebook events, or advancing mission state, while

@@ -33,6 +33,9 @@ Entry point for the swarm implementation in this project.
 - [`agent-wave-2026-08-25-stop-before-wave.md`](agent-wave-2026-08-25-stop-before-wave.md)
   — prevents a pending shutdown request from starting a new wave or creating
   dry-run side effects
+- [`agent-wave-2026-08-25-stop-run-loop-boundaries.md`](agent-wave-2026-08-25-stop-run-loop-boundaries.md)
+  — rechecks STOP after assembly and verifies duration-loop accounting and
+  interval-wait shutdown boundaries
 - [`agent-wave-2026-08-25-retry-payload-validation.md`](agent-wave-2026-08-25-retry-payload-validation.md)
   — object and required-field validation for retry event payloads
 - [`agent-wave-2026-08-25-finding-payload-validation.md`](agent-wave-2026-08-25-finding-payload-validation.md)

@@ -370,6 +370,71 @@ def test_run_for_hours_stops_after_an_empty_wave(monkeypatch, tmp_path):
     assert len(calls) == 1
 
 
+def test_run_for_hours_accounts_for_completed_wave_before_stop(
+    monkeypatch, tmp_path
+):
+    calls = []
+
+    def completed_dispatch(*args, **kwargs):
+        calls.append(1)
+        runner.STOP.set()
+        return True, runner.Finding(
+            "completed", "idea", [], "EMPIRICAL: completed", None
+        )
+
+    monkeypatch.setattr(runner, "dispatch", completed_dispatch)
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
+        [Project(path="project", name="project")],
+        Notebook(tmp_path / "run"),
+    )
+
+    runner.STOP.clear()
+    try:
+        assert swarm.run_for_hours(1.0, 20.0) == 1
+        assert calls == [1]
+        assert swarm.findings[0].title == "completed"
+    finally:
+        runner.STOP.clear()
+
+
+def test_run_for_hours_stop_during_interval_wait_prevents_next_wave(
+    monkeypatch, tmp_path
+):
+    class StopDuringWait:
+        def __init__(self):
+            self.stopped = False
+            self.waits = []
+
+        def is_set(self):
+            return self.stopped
+
+        def wait(self, timeout):
+            self.waits.append(timeout)
+            self.stopped = True
+            return True
+
+    stop = StopDuringWait()
+    monkeypatch.setattr(runner, "STOP", stop)
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
+        [Project(path="project", name="project")],
+        Notebook(tmp_path / "run"),
+    )
+    calls = []
+
+    def completed_wave():
+        calls.append(1)
+        swarm._last_wave_had_jobs = True
+        return 3
+
+    monkeypatch.setattr(swarm, "run_wave", completed_wave)
+
+    assert swarm.run_for_hours(1.0, 0.01) == 3
+    assert calls == [1]
+    assert stop.waits == [pytest.approx(0.6)]
+
+
 @pytest.mark.parametrize("dry_run", [False, True])
 def test_run_wave_does_not_start_after_stop(monkeypatch, tmp_path, capsys, dry_run):
     dispatches = []
@@ -387,6 +452,42 @@ def test_run_wave_does_not_start_after_stop(monkeypatch, tmp_path, capsys, dry_r
     )
 
     runner.STOP.set()
+    try:
+        assert swarm.run_wave() == 0
+        assert swarm.mission_index == 0
+        assert swarm._last_wave_had_jobs is False
+        assert dispatches == []
+        assert swarm.notebook.entries() == []
+        assert capsys.readouterr().out == ""
+    finally:
+        runner.STOP.clear()
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_run_wave_aborts_if_stop_arrives_during_assembly(
+    monkeypatch, tmp_path, capsys, dry_run
+):
+    dispatches = []
+
+    def unexpected_dispatch(*args, **kwargs):
+        dispatches.append((args, kwargs))
+        raise AssertionError("a canceled wave must not dispatch")
+
+    monkeypatch.setattr(runner, "dispatch", unexpected_dispatch)
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
+        [Project(path="project", name="project")],
+        Notebook(tmp_path / "run"),
+        dry_run=dry_run,
+    )
+
+    def stop_during_assembly(_size):
+        swarm.mission_index += 1
+        runner.STOP.set()
+        return [("agent-1", Mission("EXPLORE", "project", None, "brief"))]
+
+    monkeypatch.setattr(swarm, "wave", stop_during_assembly)
+    runner.STOP.clear()
     try:
         assert swarm.run_wave() == 0
         assert swarm.mission_index == 0
