@@ -21,6 +21,10 @@
 
 ## Done
 
+- 2026-08-25: direct `Swarm.run_for_hours` callers now receive finite,
+  non-negative guards for hours and inter-wave interval; CLI zero-hour routing
+  remains a single wave. [EMPIRICAL safety regression]
+
 - 2026-08-25: CLI `--hours` and config `interval_min` now reject negative or
   non-finite duration values before project resolution or dispatch; regression
   coverage protects the bounded-run invariant. [EMPIRICAL safety regression]

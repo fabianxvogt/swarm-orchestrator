@@ -114,8 +114,9 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
 8. `commit_per_finding` is opt-in and applies only to successful BUILD missions;
    it requires a clean target worktree, commits only agent changes, restores the
    index if the commit fails, and never pushes.
-9. Run durations are finite and non-negative: CLI `--hours` rejects unbounded
-   values, and config `interval_min` rejects non-finite values before dispatch.
+9. Run durations are finite and non-negative: CLI `--hours`, config
+   `interval_min`, and direct `Swarm.run_for_hours` callers reject unbounded
+   values before dispatch. CLI `--hours 0` remains one wave.
 
 ## Status
 

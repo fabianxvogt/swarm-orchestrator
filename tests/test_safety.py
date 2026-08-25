@@ -4,7 +4,8 @@ import pytest
 
 from swarm import safety
 from swarm.config import SwarmConfig, config_from_mapping, parse_yaml_subset
-from swarm.orchestrator import _effective_config, build_parser
+from swarm.orchestrator import _effective_config, build_parser, main
+from swarm.registry import Project
 
 
 class TestDenyList:
@@ -131,6 +132,36 @@ class TestConfig:
     def test_cli_hours_accepts_finite_fraction(self):
         args = build_parser().parse_args(["run", "--hours", "0.25"])
         assert args.hours == pytest.approx(0.25)
+
+    def test_cli_zero_hours_remains_a_single_wave(self, monkeypatch, tmp_path):
+        calls = []
+
+        class FakeSwarm:
+            findings = []
+
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def run_wave(self):
+                calls.append("wave")
+                return 0
+
+            def run_for_hours(self, *args):
+                calls.append("hours")
+                raise AssertionError("zero hours must not enter the duration loop")
+
+        monkeypatch.setattr(
+            "swarm.orchestrator.load_registry",
+            lambda path: [Project(path="project", name="project")],
+        )
+        monkeypatch.setattr("swarm.orchestrator.apply_filters", lambda *args: args[0])
+        monkeypatch.setattr("swarm.orchestrator.install_signal_handlers", lambda: None)
+        monkeypatch.setattr("swarm.orchestrator.reap_stale", lambda path: [])
+        monkeypatch.setattr("swarm.orchestrator.Swarm", FakeSwarm)
+        monkeypatch.setattr("swarm.orchestrator.RUNS_DIR", tmp_path / "runs")
+
+        assert main(["run", "--hours", "0", "--dry-run"]) == 0
+        assert calls == ["wave"]
 
     @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
     def test_config_interval_rejects_non_finite_values(self, value):

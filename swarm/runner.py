@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import os
 import signal
 import subprocess
@@ -422,6 +423,10 @@ class Swarm:
         return collected
 
     def run_for_hours(self, hours: float, interval_min: float) -> int:
+        if not math.isfinite(hours) or hours < 0:
+            raise ValueError("hours must be finite and non-negative")
+        if not math.isfinite(interval_min) or interval_min < 0:
+            raise ValueError("interval_min must be finite and non-negative")
         deadline = time.monotonic() + hours * 3600.0
         total = 0
         while not STOP.is_set() and time.monotonic() < deadline:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import subprocess
 
 import pytest
@@ -278,6 +279,42 @@ def test_wave_dispatches_at_most_one_primary_mission_per_project(tmp_path):
 
     assert [mission.project for _, mission in jobs] == ["project-a", "project-b"]
     assert len({mission.project for _, mission in jobs}) == len(jobs)
+
+
+@pytest.mark.parametrize(
+    ("hours", "interval_min", "message"),
+    [
+        (-1.0, 20.0, "hours"),
+        (math.nan, 20.0, "hours"),
+        (math.inf, 20.0, "hours"),
+        (-math.inf, 20.0, "hours"),
+        (0.0, -1.0, "interval_min"),
+        (0.0, math.nan, "interval_min"),
+        (0.0, math.inf, "interval_min"),
+        (0.0, -math.inf, "interval_min"),
+    ],
+)
+def test_run_for_hours_rejects_invalid_direct_durations_before_wave(
+    monkeypatch, tmp_path, hours, interval_min, message
+):
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
+        [Project(path="project", name="project")],
+        Notebook(tmp_path / "run"),
+    )
+    called = False
+
+    def unexpected_wave():
+        nonlocal called
+        called = True
+        return 0
+
+    monkeypatch.setattr(swarm, "run_wave", unexpected_wave)
+
+    with pytest.raises(ValueError, match=message):
+        swarm.run_for_hours(hours, interval_min)
+
+    assert called is False
 
 
 def test_dispatch_rejects_denied_workdir_before_backend(monkeypatch, tmp_path):
