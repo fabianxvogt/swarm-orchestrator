@@ -23,6 +23,12 @@
 
 ## Done
 
+- 2026-08-25: scheduler wave assembly now applies the same non-empty, trimmed
+  project boundary as runtime status validation. Empty configured identifiers no
+  longer schedule a mission that status would discard as malformed; lexical
+  alias handling and filesystem boundaries are unchanged. [INCREMENTAL /
+  EMPIRICAL scheduler/status contract regression]
+
 - 2026-08-25: wave assembly now shares status's lexical project identity, so
   valid aliases such as `validation/project-1` and
   `validation//project-1` cannot schedule two missions for one target.

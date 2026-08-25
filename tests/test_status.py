@@ -402,6 +402,24 @@ def test_status_rejects_padded_project_without_hiding_duplicate_dispatch(
     assert summary.contract_violations == 0
 
 
+def test_status_rejects_empty_project_without_counting_dispatch(tmp_path):
+    run = tmp_path / "20260825-120000"
+    notebook = Notebook(run)
+    notebook.log("agent-1-w120001", "dispatch", {"project": ""})
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0},
+    )
+    notebook.log("agent-1-w120001", "finding", None)
+
+    summary = summarize_runs(tmp_path)[0]
+
+    assert summary.dispatches == 0
+    assert summary.malformed_records == 1
+    assert summary.contract_violations == 0
+
+
 def test_status_flags_lexical_path_aliases_as_duplicate_projects(tmp_path):
     run = tmp_path / "20260825-120000"
     for agent, project in (

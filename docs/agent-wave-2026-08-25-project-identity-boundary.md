@@ -13,6 +13,12 @@ This prevents duplicate scheduling for dot segments, repeated separators, and
 trailing separators while preserving the original project string in the
 mission and notebook payload.
 
+The helper also owns the existing non-empty, trimmed identifier boundary. An
+empty configured project previously became ``.`` under ``posixpath.normpath``
+and was scheduled, while the same empty runtime payload was rejected by status.
+Invalid configured entries are now skipped before wave assembly, so scheduler
+and status agree without changing any filesystem resolution behavior.
+
 ## Evidence
 
 - **EMPIRICAL:** before the fix, `Swarm.wave()` returned both
@@ -23,6 +29,11 @@ mission and notebook payload.
   jobs, so normalization does not conflate distinct lexical identifiers.
 - **EMPIRICAL:** status accounting continues to report valid lexical aliases
   as one same-wave contract violation without changing dispatch totals.
+- **EMPIRICAL:** before the boundary fix, `Swarm.wave()` returned an empty
+  project for `Project(path="", ...)`, while a notebook dispatch with
+  `{"project": ""}` produced zero dispatches and one malformed record.
+- **EMPIRICAL:** after the fix, the scheduler skips the empty entry and status
+  retains its existing fail-closed accounting.
 
 ## Boundary and classification
 
@@ -34,5 +45,5 @@ relative identifiers, and broadening that boundary would risk conflating
 valid targets.
 
 **INCREMENTAL / EMPIRICAL.** This is a reproduced scheduler/status identity
-gap with focused regression coverage; provider execution and filesystem
-canonicalization remain unchanged.
+boundary gap with focused regression coverage; provider execution and
+filesystem canonicalization remain unchanged.

@@ -24,6 +24,9 @@ Entry point for the swarm implementation in this project.
 - [`agent-wave-2026-08-25-project-identity-boundary.md`](agent-wave-2026-08-25-project-identity-boundary.md)
   — shares lexical identity between wave scheduling and status accounting,
   with explicit non-conflation boundaries
+- The same project-identity boundary now rejects empty or padded configured
+  identifiers before scheduling; see the boundary document and its focused
+  scheduler/status regressions.
 - [`agent-wave-2026-08-25-retry-payload-validation.md`](agent-wave-2026-08-25-retry-payload-validation.md)
   — object and required-field validation for retry event payloads
 - [`agent-wave-2026-08-25-finding-payload-validation.md`](agent-wave-2026-08-25-finding-payload-validation.md)

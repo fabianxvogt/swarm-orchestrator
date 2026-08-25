@@ -296,6 +296,21 @@ def test_wave_deduplicates_lexical_project_aliases(tmp_path):
     assert [mission.project for _, mission in jobs] == ["validation/project-1"]
 
 
+def test_wave_skips_empty_project_identifiers(tmp_path):
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
+        [
+            Project(path="", name="empty"),
+            Project(path="project-a", name="a"),
+        ],
+        Notebook(tmp_path / "run"),
+    )
+
+    jobs = swarm.wave(swarm.config.parallel)
+
+    assert [mission.project for _, mission in jobs] == ["project-a"]
+
+
 def test_wave_keeps_distinct_lexical_project_identifiers(tmp_path):
     swarm = runner.Swarm(
         SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),

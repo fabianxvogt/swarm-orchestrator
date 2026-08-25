@@ -7,7 +7,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from .project_identity import project_identity
+from .project_identity import is_valid_project_identifier, project_identity
 
 
 _WAVE_RE = re.compile(r"-w(?P<wave>\d{6})$")
@@ -305,8 +305,7 @@ def _valid_dispatch_payload(payload: object) -> bool:
     project = payload.get("project")
     return (
         isinstance(project, str)
-        and bool(project.strip())
-        and project == project.strip()
+        and is_valid_project_identifier(project)
     )
 
 

@@ -16,7 +16,7 @@ from .config import SwarmConfig
 from .findings import Finding, parse_finding
 from .missions import SAFETY_PREAMBLE, Mission, build_brief
 from .notebook import Notebook
-from .project_identity import project_identity
+from .project_identity import is_valid_project_identifier, project_identity
 from .registry import Project
 
 STOP = threading.Event()
@@ -375,7 +375,13 @@ class Swarm:
         jobs: list[tuple[str, Mission]] = []
         target = min(
             size,
-            len({project_identity(project.path) for project in self.projects}),
+            len(
+                {
+                    project_identity(project.path)
+                    for project in self.projects
+                    if is_valid_project_identifier(project.path)
+                }
+            ),
         )
         seen_projects: set[str] = set()
         attempts = 0
@@ -385,6 +391,8 @@ class Swarm:
         while len(jobs) < target and attempts < attempt_limit:
             attempts += 1
             mission = self.next_mission()
+            if not is_valid_project_identifier(mission.project):
+                continue
             identity = project_identity(mission.project)
             if identity in seen_projects:
                 continue
