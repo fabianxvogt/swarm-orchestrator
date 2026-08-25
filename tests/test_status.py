@@ -114,6 +114,32 @@ def test_status_reports_non_object_dispatch_payload_without_counting_dispatch(
     assert summary.contract_violations == 0
 
 
+def test_status_reports_non_object_retry_payload_without_counting_retry(tmp_path):
+    run = tmp_path / "20260825-120000"
+    notebook = Notebook(run)
+    notebook.log("agent-1-w120001", "dispatch", {})
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0},
+    )
+    notebook.log("agent-1-w120001", "finding", None)
+    notebook.log("agent-1-w120001", "retry", ["not", "a", "retry"])
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0},
+    )
+    notebook.log("agent-1-w120001", "finding", {"title": "recovered"})
+
+    summary = summarize_runs(tmp_path)[0]
+
+    assert summary.retries == 0
+    assert summary.findings == 1
+    assert summary.malformed_records == 1
+    assert summary.contract_violations == 0
+
+
 def test_summarize_runs_orders_numeric_collision_suffixes(tmp_path):
     for name in (
         "20260825-120000",

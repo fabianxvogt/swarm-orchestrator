@@ -23,6 +23,10 @@
 
 ## Done
 
+- 2026-08-25: status now treats JSON-valid `retry` events with non-object
+  payloads as malformed and excludes them from retry totals. [EMPIRICAL
+  status-contract regression]
+
 - 2026-08-25: status now treats JSON-valid runtime `dispatch` events with
   non-object payloads as malformed and excludes them from dispatch totals;
   dry-run brief payloads retain their documented string contract. [EMPIRICAL

@@ -113,6 +113,8 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
    exact provider cost remains unavailable until notebooks record pricing data.
    JSON-valid finding events with non-object, non-null payloads are reported as
    malformed instead of being counted as findings.
+   JSON-valid retry events with non-object payloads are reported as malformed
+   instead of being counted as retries.
    The CLI and `summarize_runs` API require a positive integer `limit`; malformed
    limits fail closed before notebook inspection.
 8. `commit_per_finding` is opt-in and applies only to successful BUILD missions;
