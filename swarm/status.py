@@ -194,6 +194,7 @@ def _wave_payload(wave: WaveSummary) -> dict:
 
 def _summarize_run(run_dir: Path) -> RunSummary:
     counters: dict[str, dict[str, int]] = {}
+    primary_projects: dict[str, list[str]] = {}
     for notebook in sorted(run_dir.glob("*.jsonl")):
         wave_name = _wave_name(notebook.stem)
         counter = counters.setdefault(
@@ -226,8 +227,16 @@ def _summarize_run(run_dir: Path) -> RunSummary:
                 continue
             if isinstance(event, dict):
                 events.append(event)
+                project = _primary_project(event)
+                if project is not None:
+                    primary_projects.setdefault(wave_name, []).append(project)
             _count_event(event, counter)
         counter["contract_violations"] += _contract_violations(events)
+
+    for wave_name, projects in primary_projects.items():
+        counters[wave_name]["contract_violations"] += (
+            _duplicate_primary_project_count(projects)
+        )
 
     waves = tuple(
         WaveSummary(name=name, **counters[name])
@@ -262,12 +271,32 @@ def _count_event(event: object, counter: dict[str, int]) -> None:
             counter["failures"] += 1
 
 
+def _primary_project(event: dict) -> str | None:
+    if event.get("type") != "dispatch":
+        return None
+    payload = event.get("payload")
+    project = payload.get("project") if isinstance(payload, dict) else None
+    return project if isinstance(project, str) and project else None
+
+
+def _duplicate_primary_project_count(projects: list[str]) -> int:
+    seen: set[str] = set()
+    duplicates = 0
+    for project in projects:
+        if project in seen:
+            duplicates += 1
+        else:
+            seen.add(project)
+    return duplicates
+
+
 def _contract_violations(events: list[dict]) -> int:
     """Count runner protocol breaks in one agent notebook.
 
     A dry-run notebook intentionally has no backend result. Runtime notebooks
     must contain one dispatch, a result for that dispatch, and a finding record
     after each result. Retries are bounded and cannot follow a failed result.
+    Wave-level duplicate primary projects are counted by ``_summarize_run``.
     This is deliberately structural: it reports notebook completeness without
     judging provider output quality.
     """

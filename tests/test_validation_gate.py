@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from swarm import orchestrator
+from swarm.notebook import Notebook
 from swarm.status import summarize_runs
 
 
@@ -47,4 +48,12 @@ def test_local_echo_cli_validation_gate(monkeypatch, tmp_path, capsys):
     assert summary.malformed_records == 0
     assert summary.contract_violations == 0
     assert summary.output_chars > 0
-    assert len(list((runs_dir / summary.name).glob("*.jsonl"))) == 5
+    run_dir = runs_dir / summary.name
+    assert len(list(run_dir.glob("*.jsonl"))) == 5
+    dispatches = [
+        event
+        for event in Notebook(run_dir).entries()
+        if event["type"] == "dispatch"
+    ]
+    projects = [event["payload"]["project"] for event in dispatches]
+    assert len(projects) == len(set(projects)) == 5

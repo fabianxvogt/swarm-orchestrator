@@ -235,6 +235,30 @@ def test_status_reports_incomplete_and_invalid_retry_notebooks(tmp_path):
     assert "contract_violations=2" in report
 
 
+def test_status_flags_duplicate_primary_projects_in_one_wave(tmp_path):
+    run = tmp_path / "20260825-120000"
+    for agent in ("agent-1-w120001", "agent-2-w120001"):
+        notebook = Notebook(run)
+        notebook.log(
+            agent,
+            "dispatch",
+            {"project": "validation/project-1"},
+        )
+        notebook.log(
+            agent,
+            "result",
+            {"returncode": 0, "timed_out": False, "stdout_chars": 0},
+        )
+        notebook.log(agent, "finding", None)
+
+    summary = summarize_runs(tmp_path)[0]
+
+    assert summary.dispatches == 2
+    assert summary.contract_violations == 1
+    payload = json.loads(format_status_json([summary], tmp_path))
+    assert payload["runs"][0]["waves"][0]["contract_violations"] == 1
+
+
 def test_status_exempts_safety_blocked_notebook_without_backend_result(tmp_path):
     run = tmp_path / "20260825-120000"
     notebook = Notebook(run)

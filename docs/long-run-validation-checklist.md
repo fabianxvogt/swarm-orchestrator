@@ -62,9 +62,10 @@ parallelism, interval, and observed wave count. Then verify:
 
 - `schema_version` is recognized and `malformed_records` is zero.
 - `contract_violations` is zero; this confirms each runtime dispatch has a
-  result/finding record and that retries stay bounded and do not follow failed
-  results. Dry-run notebooks are intentionally exempt because they do not call
-  a backend.
+  result/finding record, retries stay bounded and do not follow failed results,
+  and no primary project is dispatched twice in one wave. Dry-run notebooks are
+  intentionally exempt because they do not call a backend; safety-blocked
+  notebooks are exempt because they stop before dispatch.
 - Every wave has no more than eight dispatches and no duplicate primary
   project; fewer dispatches are explainable only by safety or project filters.
 - Each dispatch has a result; a successful result without a finding has at

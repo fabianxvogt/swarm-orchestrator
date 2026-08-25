@@ -23,6 +23,10 @@
 
 ## Done
 
+- 2026-08-25: status contract validation now flags duplicate primary projects
+  within a wave, and the deterministic echo gate asserts five distinct project
+  dispatches. [EMPIRICAL local acceptance invariant]
+
 - 2026-08-25: read-only status now reports runtime notebook contract
   violations for incomplete dispatch/result/finding sequences and retries after
   failed results; dry-run notebooks remain exempt. [EMPIRICAL observability
