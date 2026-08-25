@@ -129,6 +129,35 @@ def test_status_rejects_finding_with_non_string_title_and_flags_sequence(
     assert summary.contract_violations == 1
 
 
+def test_status_flags_finding_after_completed_result_finding_pair(tmp_path):
+    run = tmp_path / "20260825-120000"
+    notebook = Notebook(run)
+    notebook.log(
+        "agent-1-w120001", "dispatch", {"project": "validation/project-1"}
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0},
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "finding",
+        {"title": "first", "claim": "EMPIRICAL: first"},
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "finding",
+        {"title": "duplicate", "claim": "EMPIRICAL: duplicate"},
+    )
+
+    summary = summarize_runs(tmp_path)[0]
+
+    assert summary.findings == 2
+    assert summary.malformed_records == 0
+    assert summary.contract_violations == 1
+
+
 def test_status_reports_non_object_dispatch_payload_without_counting_dispatch(
     tmp_path,
 ):

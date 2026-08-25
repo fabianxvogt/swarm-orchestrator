@@ -434,6 +434,10 @@ def _contract_violations(events: list[dict]) -> int:
             violations += 1
 
     for index, event in enumerate(events):
+        if event.get("type") == "finding":
+            previous = events[index - 1] if index else None
+            if previous is None or previous.get("type") != "result":
+                violations += 1
         if event.get("type") != "result":
             continue
         if index + 1 >= len(events) or not _valid_finding_event(events[index + 1]):

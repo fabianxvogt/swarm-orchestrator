@@ -23,6 +23,11 @@
 
 ## Done
 
+- 2026-08-25: status now flags valid `finding` events that do not immediately
+  follow a `result`, preventing duplicate or orphan finding records from being
+  accepted as a complete runtime sequence. [INCREMENTAL / EMPIRICAL
+  status-contract regression]
+
 - 2026-08-25: status now validates non-null runtime `finding` payloads for the
   parser's required non-empty string `title` and `claim` fields; malformed
   findings are excluded from totals and cannot satisfy result/finding
