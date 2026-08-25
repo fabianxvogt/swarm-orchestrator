@@ -23,6 +23,11 @@
 
 ## Done
 
+- 2026-08-25: status now validates the required `reason` and positive integer
+  `attempt` fields on JSON-valid retry payloads, so incomplete or wrongly typed
+  retries are reported as malformed instead of inflating retry totals.
+  [EMPIRICAL status-contract regression]
+
 - 2026-08-25: status now treats JSON-valid `retry` events with non-object
   payloads as malformed and excludes them from retry totals. [EMPIRICAL
   status-contract regression]

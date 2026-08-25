@@ -140,6 +140,44 @@ def test_status_reports_non_object_retry_payload_without_counting_retry(tmp_path
     assert summary.contract_violations == 0
 
 
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {"reason": "missing_or_malformed_finding", "attempt": "2"},
+        {"reason": 2, "attempt": 2},
+        {"reason": "", "attempt": 2},
+        {"reason": "missing_or_malformed_finding", "attempt": True},
+    ],
+)
+def test_status_reports_retry_with_invalid_required_fields_without_counting_retry(
+    tmp_path, payload
+):
+    run = tmp_path / "20260825-120000"
+    notebook = Notebook(run)
+    notebook.log("agent-1-w120001", "dispatch", {})
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0},
+    )
+    notebook.log("agent-1-w120001", "finding", None)
+    notebook.log("agent-1-w120001", "retry", payload)
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0},
+    )
+    notebook.log("agent-1-w120001", "finding", {"title": "recovered"})
+
+    summary = summarize_runs(tmp_path)[0]
+
+    assert summary.retries == 0
+    assert summary.findings == 1
+    assert summary.malformed_records == 1
+    assert summary.contract_violations == 0
+
+
 def test_summarize_runs_orders_numeric_collision_suffixes(tmp_path):
     for name in (
         "20260825-120000",

@@ -259,7 +259,7 @@ def _count_event(event: object, counter: dict[str, int]) -> None:
     elif event_type == "dispatch_dry_run":
         counter["dispatches"] += 1
     elif event_type == "retry":
-        if not isinstance(payload, dict):
+        if not _valid_retry_payload(payload):
             counter["malformed_records"] += 1
             return
         counter["retries"] += 1
@@ -282,6 +282,21 @@ def _count_event(event: object, counter: dict[str, int]) -> None:
             isinstance(returncode, int) and returncode != 0
         ):
             counter["failures"] += 1
+
+
+def _valid_retry_payload(payload: object) -> bool:
+    """Return whether a retry record has the runner's required fields."""
+    if not isinstance(payload, dict):
+        return False
+    reason = payload.get("reason")
+    attempt = payload.get("attempt")
+    return (
+        isinstance(reason, str)
+        and bool(reason.strip())
+        and isinstance(attempt, int)
+        and not isinstance(attempt, bool)
+        and attempt >= 1
+    )
 
 
 def _primary_project(event: dict) -> str | None:
