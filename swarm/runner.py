@@ -413,6 +413,9 @@ class Swarm:
         return jobs
 
     def run_wave(self) -> int:
+        if STOP.is_set():
+            self._last_wave_had_jobs = False
+            return 0
         collected, had_jobs = self._run_wave()
         self._last_wave_had_jobs = had_jobs
         return collected

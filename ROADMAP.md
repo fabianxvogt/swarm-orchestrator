@@ -23,6 +23,12 @@
 
 ## Done
 
+- 2026-08-25: `run_wave()` now honors a pending shutdown request before
+  assembling a new wave. This prevents stopped dry-run invocations from
+  printing briefs, writing notebook events, or advancing mission state, while
+  preserving the existing completion of an already-started wave.
+  [INCREMENTAL / EMPIRICAL STOP-boundary regression]
+
 - 2026-08-25: wave assembly now treats an exhausted safety-denied mission scan
   as an empty wave, and duration runs stop after any empty wave. This prevents
   all-invalid configurations from raising unexpectedly or spinning through

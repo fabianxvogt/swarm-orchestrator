@@ -103,7 +103,9 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
 3. **No secrets**: `.env` and key paths are denied outright; the deny-list also
    blocks them from appearing in task text.
 4. **Process hygiene**: per-agent timeout, stale-process reaping from previous
-   runs' pid records, SIGINT/SIGTERM graceful shutdown.
+   runs' pid records, and SIGINT/SIGTERM graceful shutdown. A stop request is
+   checked before a new wave is assembled, so it cannot create dry-run notebook
+   output or backend dispatches after shutdown begins.
 5. `--auto` (permission auto-approval) is off by default and only ever passed
    for write missions.
 6. A successful backend response with an absent or malformed FINDING block gets

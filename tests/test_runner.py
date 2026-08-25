@@ -370,6 +370,34 @@ def test_run_for_hours_stops_after_an_empty_wave(monkeypatch, tmp_path):
     assert len(calls) == 1
 
 
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_run_wave_does_not_start_after_stop(monkeypatch, tmp_path, capsys, dry_run):
+    dispatches = []
+
+    def unexpected_dispatch(*args, **kwargs):
+        dispatches.append((args, kwargs))
+        raise AssertionError("a stopped run must not dispatch a new wave")
+
+    monkeypatch.setattr(runner, "dispatch", unexpected_dispatch)
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
+        [Project(path="project", name="project")],
+        Notebook(tmp_path / "run"),
+        dry_run=dry_run,
+    )
+
+    runner.STOP.set()
+    try:
+        assert swarm.run_wave() == 0
+        assert swarm.mission_index == 0
+        assert swarm._last_wave_had_jobs is False
+        assert dispatches == []
+        assert swarm.notebook.entries() == []
+        assert capsys.readouterr().out == ""
+    finally:
+        runner.STOP.clear()
+
+
 def test_wave_keeps_distinct_lexical_project_identifiers(tmp_path):
     swarm = runner.Swarm(
         SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
