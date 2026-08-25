@@ -23,6 +23,11 @@
 
 ## Done
 
+- 2026-08-25: status now excludes malformed JSON-valid `retry` events from
+  result/retry ordering checks, so an invalid retry cannot make two results
+  appear like a complete bounded retry sequence while `retries=0`. [INCREMENTAL
+  / EMPIRICAL status-contract regression]
+
 - 2026-08-25: status now flags JSON-valid retry/result/finding sequences whose
   runner-emitted attempt metadata violates the bounded attempt-1/attempt-2
   protocol; optional metadata omitted by older notebooks remains compatible.

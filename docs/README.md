@@ -26,6 +26,8 @@ Entry point for the swarm implementation in this project.
   — flags retries after an already parsed first finding
 - [`agent-wave-2026-08-25-attempt-coherence.md`](agent-wave-2026-08-25-attempt-coherence.md)
   — validates bounded retry/result/finding attempt numbering
+- [`agent-wave-2026-08-25-retry-sequence-validation.md`](agent-wave-2026-08-25-retry-sequence-validation.md)
+  — keeps malformed retry records out of sequence validation
 - `swarm/` — implementation
 - `tests/` — verification
 

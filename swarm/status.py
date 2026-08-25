@@ -436,7 +436,12 @@ def _contract_violations(events: list[dict]) -> int:
         if event.get("type") == "result"
         and _valid_result_payload(event.get("payload"))
     ]
-    retries = [event for event in events if event.get("type") == "retry"]
+    retries = [
+        event
+        for event in events
+        if event.get("type") == "retry"
+        and _valid_retry_payload(event.get("payload"))
+    ]
     if not dispatches and not results and not retries:
         if all(event.get("type") == "provenance_blocked" for event in events):
             return 0
@@ -490,6 +495,7 @@ def _contract_violations(events: list[dict]) -> int:
             index
             for index, event in enumerate(events)
             if event.get("type") == "retry"
+            and _valid_retry_payload(event.get("payload"))
         ]
         if len(result_indexes) >= 2 and not (
             result_indexes[0] < retry_indexes[0] < result_indexes[1]

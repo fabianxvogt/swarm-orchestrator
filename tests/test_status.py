@@ -283,7 +283,7 @@ def test_status_reports_dispatch_with_invalid_required_project_without_counting_
     assert summary.contract_violations == 0
 
 
-def test_status_reports_non_object_retry_payload_without_counting_retry(tmp_path):
+def test_status_flags_non_object_retry_between_results(tmp_path):
     run = tmp_path / "20260825-120000"
     notebook = Notebook(run)
     notebook.log(
@@ -312,7 +312,7 @@ def test_status_reports_non_object_retry_payload_without_counting_retry(tmp_path
     assert summary.retries == 0
     assert summary.findings == 1
     assert summary.malformed_records == 1
-    assert summary.contract_violations == 0
+    assert summary.contract_violations == 1
 
 
 @pytest.mark.parametrize(
@@ -356,7 +356,7 @@ def test_status_reports_retry_with_invalid_required_fields_without_counting_retr
     assert summary.retries == 0
     assert summary.findings == 1
     assert summary.malformed_records == 1
-    assert summary.contract_violations == 0
+    assert summary.contract_violations == 1
 
 
 @pytest.mark.parametrize(
