@@ -121,6 +121,9 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
    JSON-valid non-null finding events require non-empty string `title` and
    `claim` fields; malformed findings are excluded from finding totals and do
    not satisfy result/finding sequencing.
+   Same-wave duplicate-project accounting uses lexical path identity while
+   preserving the original dispatch payload and count; filesystem-dependent
+   aliases remain outside the status-only check.
    When present, finding `type` must be a string, `projects` a list of strings,
    `experiment` a string or `null`, and `attempt` a positive integer; omitted
    optional fields remain readable for older notebooks.

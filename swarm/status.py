@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import posixpath
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -443,11 +444,24 @@ def _duplicate_primary_project_count(projects: list[str]) -> int:
     seen: set[str] = set()
     duplicates = 0
     for project in projects:
-        if project in seen:
+        identity = _project_identity(project)
+        if identity in seen:
             duplicates += 1
         else:
-            seen.add(project)
+            seen.add(identity)
     return duplicates
+
+
+def _project_identity(project: str) -> str:
+    """Return the lexical path identity used for duplicate accounting.
+
+    Runtime project identifiers are relative POSIX-style paths from the
+    configured workdir. Keep the serialized value and dispatch count intact,
+    but collapse aliases such as ``./project`` and ``project/`` when checking
+    same-wave uniqueness. Filesystem-dependent aliases remain outside this
+    status-only check because the notebook does not carry the workdir.
+    """
+    return posixpath.normpath(project)
 
 
 def _contract_violations(events: list[dict]) -> int:

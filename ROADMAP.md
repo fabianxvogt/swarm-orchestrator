@@ -23,6 +23,13 @@
 
 ## Done
 
+- 2026-08-25: status duplicate-project accounting now compares valid runtime
+  project identifiers by lexical path identity, so aliases such as
+  `validation/project-1` and `./validation/project-1` cannot bypass the
+  same-wave duplicate check. Original payloads and dispatch counts remain
+  unchanged; filesystem-dependent aliases are outside this status-only check.
+  [INCREMENTAL / EMPIRICAL status-contract regression]
+
 - 2026-08-25: status now rejects JSON-valid runtime dispatches whose `project`
   field has surrounding whitespace. Such records no longer inflate dispatch
   totals or bypass same-wave duplicate-project accounting. [INCREMENTAL /
