@@ -23,6 +23,11 @@
 
 ## Done
 
+- 2026-08-25: read-only status now reports runtime notebook contract
+  violations for incomplete dispatch/result/finding sequences and retries after
+  failed results; dry-run notebooks remain exempt. [EMPIRICAL observability
+  regression]
+
 - 2026-08-25: notebook path handling now rejects path-like agent identifiers,
   preventing direct notebook reads or writes from escaping the run directory;
   regression coverage preserves normal generated labels. [EMPIRICAL safety

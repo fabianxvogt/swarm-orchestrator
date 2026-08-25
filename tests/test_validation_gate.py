@@ -45,5 +45,6 @@ def test_local_echo_cli_validation_gate(monkeypatch, tmp_path, capsys):
     assert summary.findings == 0
     assert summary.failures == 0
     assert summary.malformed_records == 0
+    assert summary.contract_violations == 0
     assert summary.output_chars > 0
     assert len(list((runs_dir / summary.name).glob("*.jsonl"))) == 5

@@ -18,10 +18,16 @@ def test_summarize_runs_groups_wave_events_and_counts_failures(tmp_path):
         "result",
         {"returncode": 0, "timed_out": False, "stdout_chars": 17},
     )
+    notebook.log("agent-1-w120001", "finding", None)
     notebook.log(
         "agent-1-w120001",
         "retry",
         {"reason": "missing_or_malformed_finding", "attempt": 2},
+    )
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0},
     )
     notebook.log("agent-1-w120001", "finding", {"title": "one"})
     notebook.log("agent-2-w120001", "dispatch", {})
@@ -40,6 +46,7 @@ def test_summarize_runs_groups_wave_events_and_counts_failures(tmp_path):
     assert summary.retries == 1
     assert summary.findings == 1
     assert summary.failures == 1
+    assert summary.contract_violations == 0
     assert summary.output_chars == 20
     assert summary.output_tokens_estimate == 5
     assert [(wave.name, wave.agents) for wave in summary.waves] == [
@@ -92,7 +99,9 @@ def test_status_cli_does_not_require_portfolio_inventory(tmp_path, capsys):
     )
 
     assert main(["status", "--runs-dir", str(tmp_path)]) == 0
-    assert "dispatches=1" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "dispatches=1" in output
+    assert "contract_violations=0" in output
 
 
 def test_status_json_has_versioned_run_and_wave_totals(tmp_path):
@@ -119,6 +128,7 @@ def test_status_json_has_versioned_run_and_wave_totals(tmp_path):
         "retries": 0,
         "findings": 1,
         "failures": 0,
+        "contract_violations": 0,
         "output_chars": 8,
         "output_tokens_estimate": 2,
         "malformed_records": 0,
@@ -129,6 +139,7 @@ def test_status_json_has_versioned_run_and_wave_totals(tmp_path):
         "retries": 0,
         "findings": 1,
         "failures": 0,
+        "contract_violations": 0,
         "output_chars": 8,
         "output_tokens_estimate": 2,
         "malformed_records": 0,
@@ -140,6 +151,7 @@ def test_status_json_has_versioned_run_and_wave_totals(tmp_path):
         "retries": 0,
         "findings": 1,
         "failures": 0,
+        "contract_violations": 0,
         "output_chars": 8,
         "output_tokens_estimate": 2,
         "malformed_records": 0,
@@ -162,9 +174,21 @@ def test_status_reports_retry_events_without_changing_dispatch_count(tmp_path):
     notebook.log("agent-1-w120001", "dispatch", {})
     notebook.log(
         "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0},
+    )
+    notebook.log("agent-1-w120001", "finding", None)
+    notebook.log(
+        "agent-1-w120001",
         "retry",
         {"reason": "missing_or_malformed_finding", "attempt": 2},
     )
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0},
+    )
+    notebook.log("agent-1-w120001", "finding", None)
 
     summary = summarize_runs(tmp_path)[0]
     payload = json.loads(format_status_json([summary], tmp_path))
@@ -173,7 +197,53 @@ def test_status_reports_retry_events_without_changing_dispatch_count(tmp_path):
     assert summary.retries == 1
     assert summary.findings == 0
     assert payload["totals"]["retries"] == 1
+    assert payload["totals"]["contract_violations"] == 0
     assert payload["runs"][0]["waves"][0]["retries"] == 1
+
+
+def test_status_reports_incomplete_and_invalid_retry_notebooks(tmp_path):
+    run = tmp_path / "20260825-120000"
+    incomplete = Notebook(run)
+    incomplete.log("agent-1-w120001", "dispatch", {})
+
+    failed_retry = Notebook(run)
+    failed_retry.log("agent-2-w120001", "dispatch", {})
+    failed_retry.log(
+        "agent-2-w120001",
+        "result",
+        {"returncode": 1, "timed_out": False, "stdout_chars": 0},
+    )
+    failed_retry.log("agent-2-w120001", "finding", None)
+    failed_retry.log(
+        "agent-2-w120001",
+        "retry",
+        {"reason": "missing_or_malformed_finding", "attempt": 2},
+    )
+    failed_retry.log(
+        "agent-2-w120001",
+        "result",
+        {"returncode": 1, "timed_out": False, "stdout_chars": 0},
+    )
+    failed_retry.log("agent-2-w120001", "finding", None)
+
+    summary = summarize_runs(tmp_path)[0]
+
+    assert summary.dispatches == 2
+    assert summary.failures == 2
+    assert summary.contract_violations == 2
+    report = format_status([summary], tmp_path)
+    assert "contract_violations=2" in report
+
+
+def test_status_exempts_safety_blocked_notebook_without_backend_result(tmp_path):
+    run = tmp_path / "20260825-120000"
+    notebook = Notebook(run)
+    notebook.log("agent-1-w120001", "provenance_blocked", {"error": "dirty"})
+
+    summary = summarize_runs(tmp_path)[0]
+
+    assert summary.dispatches == 0
+    assert summary.contract_violations == 0
 
 
 def test_status_rejects_non_positive_limit(tmp_path, capsys):

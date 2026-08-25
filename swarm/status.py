@@ -24,6 +24,7 @@ class WaveSummary:
     failures: int = 0
     output_chars: int = 0
     malformed_records: int = 0
+    contract_violations: int = 0
 
     @property
     def output_tokens_estimate(self) -> int:
@@ -64,6 +65,10 @@ class RunSummary:
     def malformed_records(self) -> int:
         return sum(wave.malformed_records for wave in self.waves)
 
+    @property
+    def contract_violations(self) -> int:
+        return sum(wave.contract_violations for wave in self.waves)
+
 
 def summarize_runs(runs_dir: Path, limit: int = 10) -> list[RunSummary]:
     """Summarize at most ``limit`` newest run directories without mutating them."""
@@ -95,6 +100,7 @@ def format_status(summaries: list[RunSummary], runs_dir: Path) -> str:
             f"dispatches={summary.dispatches} findings={summary.findings} "
             f"retries={summary.retries} "
             f"failures={summary.failures} "
+            f"contract_violations={summary.contract_violations} "
             f"output_tokens~{summary.output_tokens_estimate} "
             "cost=unavailable"
         )
@@ -103,7 +109,8 @@ def format_status(summaries: list[RunSummary], runs_dir: Path) -> str:
                 f"  wave {wave.name}: agents={wave.agents} "
                 f"dispatches={wave.dispatches} findings={wave.findings} "
                 f"retries={wave.retries} "
-                f"failures={wave.failures}"
+                f"failures={wave.failures} "
+                f"contract_violations={wave.contract_violations}"
             )
         if summary.malformed_records:
             lines.append(
@@ -136,6 +143,9 @@ def _status_payload(summaries: list[RunSummary], runs_dir: Path) -> dict:
             "retries": sum(summary.retries for summary in summaries),
             "findings": sum(summary.findings for summary in summaries),
             "failures": sum(summary.failures for summary in summaries),
+            "contract_violations": sum(
+                summary.contract_violations for summary in summaries
+            ),
             "output_chars": sum(summary.output_chars for summary in summaries),
             "output_tokens_estimate": sum(
                 summary.output_tokens_estimate for summary in summaries
@@ -159,6 +169,7 @@ def _run_payload(summary: RunSummary) -> dict:
             "retries": summary.retries,
             "findings": summary.findings,
             "failures": summary.failures,
+            "contract_violations": summary.contract_violations,
             "output_chars": summary.output_chars,
             "output_tokens_estimate": summary.output_tokens_estimate,
             "malformed_records": summary.malformed_records,
@@ -174,6 +185,7 @@ def _wave_payload(wave: WaveSummary) -> dict:
         "retries": wave.retries,
         "findings": wave.findings,
         "failures": wave.failures,
+        "contract_violations": wave.contract_violations,
         "output_chars": wave.output_chars,
         "output_tokens_estimate": wave.output_tokens_estimate,
         "malformed_records": wave.malformed_records,
@@ -194,9 +206,11 @@ def _summarize_run(run_dir: Path) -> RunSummary:
                 "failures": 0,
                 "output_chars": 0,
                 "malformed_records": 0,
+                "contract_violations": 0,
             },
         )
         counter["agents"] += 1
+        events: list[dict] = []
         try:
             lines = notebook.read_text(encoding="utf-8").splitlines()
         except OSError:
@@ -210,7 +224,10 @@ def _summarize_run(run_dir: Path) -> RunSummary:
             except json.JSONDecodeError:
                 counter["malformed_records"] += 1
                 continue
+            if isinstance(event, dict):
+                events.append(event)
             _count_event(event, counter)
+        counter["contract_violations"] += _contract_violations(events)
 
     waves = tuple(
         WaveSummary(name=name, **counters[name])
@@ -243,6 +260,79 @@ def _count_event(event: object, counter: dict[str, int]) -> None:
             isinstance(returncode, int) and returncode != 0
         ):
             counter["failures"] += 1
+
+
+def _contract_violations(events: list[dict]) -> int:
+    """Count runner protocol breaks in one agent notebook.
+
+    A dry-run notebook intentionally has no backend result. Runtime notebooks
+    must contain one dispatch, a result for that dispatch, and a finding record
+    after each result. Retries are bounded and cannot follow a failed result.
+    This is deliberately structural: it reports notebook completeness without
+    judging provider output quality.
+    """
+    if not events:
+        return 0
+
+    dry_run_dispatches = [
+        event for event in events if event.get("type") == "dispatch_dry_run"
+    ]
+    if dry_run_dispatches:
+        return 0 if len(events) == len(dry_run_dispatches) else 1
+
+    dispatches = [event for event in events if event.get("type") == "dispatch"]
+    results = [event for event in events if event.get("type") == "result"]
+    retries = [event for event in events if event.get("type") == "retry"]
+    if not dispatches and not results and not retries:
+        if all(event.get("type") == "provenance_blocked" for event in events):
+            return 0
+        return 1
+    violations = 0
+
+    if len(dispatches) != 1:
+        violations += 1
+    if not results:
+        violations += 1
+    if len(results) > 2:
+        violations += 1
+    if len(retries) > 1:
+        violations += 1
+    if len(results) > 1 and not retries:
+        violations += 1
+    if retries and len(results) < 2:
+        violations += 1
+
+    if retries and results:
+        first_payload = results[0].get("payload")
+        if isinstance(first_payload, dict):
+            first_failed = first_payload.get("timed_out") or (
+                isinstance(first_payload.get("returncode"), int)
+                and first_payload["returncode"] != 0
+            )
+            if first_failed:
+                violations += 1
+        result_indexes = [
+            index
+            for index, event in enumerate(events)
+            if event.get("type") == "result"
+        ]
+        retry_indexes = [
+            index
+            for index, event in enumerate(events)
+            if event.get("type") == "retry"
+        ]
+        if len(result_indexes) >= 2 and not (
+            result_indexes[0] < retry_indexes[0] < result_indexes[1]
+        ):
+            violations += 1
+
+    for index, event in enumerate(events):
+        if event.get("type") != "result":
+            continue
+        if index + 1 >= len(events) or events[index + 1].get("type") != "finding":
+            violations += 1
+
+    return violations
 
 
 def _wave_name(stem: str) -> str:

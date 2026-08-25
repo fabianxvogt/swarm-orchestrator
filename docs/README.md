@@ -12,6 +12,8 @@ Entry point for the swarm implementation in this project.
   — positive-integer validation for the status limit CLI/API contract
 - [`agent-wave-2026-08-25-notebook-paths.md`](agent-wave-2026-08-25-notebook-paths.md)
   — containment of direct notebook agent paths
+- [`agent-wave-2026-08-25-status-contracts.md`](agent-wave-2026-08-25-status-contracts.md)
+  — bounded validation of runtime notebook event sequences
 - `swarm/` — implementation
 - `tests/` — verification
 
