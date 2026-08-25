@@ -14,6 +14,8 @@ Entry point for the swarm implementation in this project.
   — containment of direct notebook agent paths
 - [`agent-wave-2026-08-25-status-contracts.md`](agent-wave-2026-08-25-status-contracts.md)
   — bounded validation of runtime notebook event sequences
+- [`agent-wave-2026-08-25-dispatch-payload-validation.md`](agent-wave-2026-08-25-dispatch-payload-validation.md)
+  — object validation for runtime dispatch event payloads
 - `swarm/` — implementation
 - `tests/` — verification
 

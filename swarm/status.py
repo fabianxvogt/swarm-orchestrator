@@ -251,7 +251,12 @@ def _count_event(event: object, counter: dict[str, int]) -> None:
         return
     event_type = event.get("type")
     payload = event.get("payload")
-    if event_type in {"dispatch", "dispatch_dry_run"}:
+    if event_type == "dispatch":
+        if not isinstance(payload, dict):
+            counter["malformed_records"] += 1
+            return
+        counter["dispatches"] += 1
+    elif event_type == "dispatch_dry_run":
         counter["dispatches"] += 1
     elif event_type == "retry":
         counter["retries"] += 1

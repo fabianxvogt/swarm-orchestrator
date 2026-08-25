@@ -23,6 +23,11 @@
 
 ## Done
 
+- 2026-08-25: status now treats JSON-valid runtime `dispatch` events with
+  non-object payloads as malformed and excludes them from dispatch totals;
+  dry-run brief payloads retain their documented string contract. [EMPIRICAL
+  status-contract regression]
+
 - 2026-08-25: status now treats JSON-valid `finding` events with a non-object,
   non-null payload as malformed and excludes them from finding totals. [EMPIRICAL
   status-contract regression]
