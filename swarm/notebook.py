@@ -14,6 +14,10 @@ class Notebook:
         run_dir.mkdir(parents=True, exist_ok=True)
 
     def path_for(self, agent: str) -> Path:
+        if not isinstance(agent, str) or not agent or agent in {".", ".."}:
+            raise ValueError("agent must be a simple filename")
+        if Path(agent).name != agent or "\\" in agent:
+            raise ValueError("agent must be a simple filename")
         return self.run_dir / f"{agent}.jsonl"
 
     def log(self, agent: str, event_type: str, payload: Any) -> dict:

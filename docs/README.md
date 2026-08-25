@@ -10,6 +10,8 @@ Entry point for the swarm implementation in this project.
   — deterministic ordering for same-second run-directory collisions
 - [`agent-wave-2026-08-25-status-input-validation.md`](agent-wave-2026-08-25-status-input-validation.md)
   — positive-integer validation for the status limit CLI/API contract
+- [`agent-wave-2026-08-25-notebook-paths.md`](agent-wave-2026-08-25-notebook-paths.md)
+  — containment of direct notebook agent paths
 - `swarm/` — implementation
 - `tests/` — verification
 

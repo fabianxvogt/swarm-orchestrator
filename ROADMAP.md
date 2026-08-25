@@ -23,6 +23,11 @@
 
 ## Done
 
+- 2026-08-25: notebook path handling now rejects path-like agent identifiers,
+  preventing direct notebook reads or writes from escaping the run directory;
+  regression coverage preserves normal generated labels. [EMPIRICAL safety
+  regression]
+
 - 2026-08-25: the status CLI/API now reject non-integer (including boolean)
   limits with a stable validation error before scanning run directories.
   [EMPIRICAL observability regression]

@@ -119,6 +119,8 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
 9. Run durations are finite and non-negative: CLI `--hours`, config
    `interval_min`, and direct `Swarm.run_for_hours` callers reject unbounded
    values before dispatch. CLI `--hours 0` remains one wave.
+10. Notebook agent identifiers must be single filename components, so logging
+    or reading an agent notebook cannot escape its run directory.
 
 ## Status
 

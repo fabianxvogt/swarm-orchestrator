@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from swarm.findings import (
     Finding,
     append_to_connections,
@@ -117,3 +119,19 @@ class TestNotebook:
         with (tmp_path / "run1" / "agent-1.jsonl").open() as fh:
             lines = [json.loads(line) for line in fh]
         assert len(lines) == 2
+
+    @pytest.mark.parametrize("agent", ["../outside", "/outside", r"nested\\agent"])
+    def test_path_like_agent_names_cannot_escape_run_directory(
+        self, tmp_path, agent
+    ):
+        nb = Notebook(tmp_path / "run1")
+
+        with pytest.raises(ValueError, match="agent must be a simple filename"):
+            nb.path_for(agent)
+        with pytest.raises(ValueError, match="agent must be a simple filename"):
+            nb.log(agent, "dispatch", {})
+        with pytest.raises(ValueError, match="agent must be a simple filename"):
+            nb.entries(agent)
+
+        assert list(tmp_path.glob("**/outside.jsonl")) == []
+        assert nb.entries() == []
