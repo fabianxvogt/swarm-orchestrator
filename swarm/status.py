@@ -418,6 +418,22 @@ def _contract_violations(events: list[dict]) -> int:
             )
             if first_failed:
                 violations += 1
+        valid_result_indexes = [
+            index
+            for index, event in enumerate(events)
+            if event.get("type") == "result"
+            and _valid_result_payload(event.get("payload"))
+        ]
+        if valid_result_indexes:
+            first_finding_index = valid_result_indexes[0] + 1
+            if first_finding_index < len(events):
+                first_finding = events[first_finding_index]
+                if (
+                    first_finding.get("type") == "finding"
+                    and first_finding.get("payload") is not None
+                    and _valid_finding_payload(first_finding.get("payload"))
+                ):
+                    violations += 1
         result_indexes = [
             index
             for index, event in enumerate(events)

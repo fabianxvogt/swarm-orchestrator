@@ -22,6 +22,8 @@ Entry point for the swarm implementation in this project.
   — required-field validation and sequencing for runtime finding payloads
 - [`agent-wave-2026-08-25-finding-order-validation.md`](agent-wave-2026-08-25-finding-order-validation.md)
   — rejects finding events that do not immediately follow a result
+- [`agent-wave-2026-08-25-retry-after-finding.md`](agent-wave-2026-08-25-retry-after-finding.md)
+  — flags retries after an already parsed first finding
 - `swarm/` — implementation
 - `tests/` — verification
 

@@ -121,6 +121,9 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
    JSON-valid non-null finding events require non-empty string `title` and
    `claim` fields; malformed findings are excluded from finding totals and do
    not satisfy result/finding sequencing.
+   Status also flags a retry whose first result is already followed by a
+   non-null valid finding, because the runner retries only after `finding:
+   null`.
    The CLI and `summarize_runs` API require a positive integer `limit`; malformed
    limits fail closed before notebook inspection.
 8. `commit_per_finding` is opt-in and applies only to successful BUILD missions;

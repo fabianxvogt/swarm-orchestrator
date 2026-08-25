@@ -23,6 +23,11 @@
 
 ## Done
 
+- 2026-08-25: status now flags a JSON-valid retry whose first result is already
+  followed by a parsed finding; the runner's retry path requires that first
+  finding record to be `null`. Provider dispatch and retry behavior are
+  unchanged. [INCREMENTAL / EMPIRICAL status-contract regression]
+
 - 2026-08-25: status now flags valid `finding` events that do not immediately
   follow a `result`, preventing duplicate or orphan finding records from being
   accepted as a complete runtime sequence. [INCREMENTAL / EMPIRICAL
