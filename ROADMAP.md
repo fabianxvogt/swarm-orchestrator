@@ -6,6 +6,8 @@
 
 - Long-run validation: one real 2–4 hour session (`swarm run --hours 2
   --parallel 8 --interval-min 20`) and a review of notebook quality.
+- The safe local preflight and owner-run acceptance criteria are recorded in
+  [`docs/long-run-validation-checklist.md`](docs/long-run-validation-checklist.md).
 
 ## Next
 
@@ -20,6 +22,11 @@
   and write up results — see ideas/INBOX.md "Swarm-emergence lab".
 
 ## Done
+
+- 2026-08-25: added a bounded long-run validation checklist separating the
+  temporary-directory `echo` preflight from the owner-only provider session;
+  it defines notebook integrity, retry, safety, and evidence checks without
+  running a provider or multi-hour job. [EMPIRICAL local validation / process]
 
 - 2026-08-25: direct `Swarm.run_for_hours` callers now receive finite,
   non-negative guards for hours and inter-wave interval; CLI zero-hour routing

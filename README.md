@@ -120,8 +120,10 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
 
 ## Status
 
-Experimental / early. Verified end-to-end with single-wave opencode spawns;
-multi-hour mode implemented but not yet long-run tested. See ROADMAP.md.
+Experimental / early. Verified end-to-end with bounded local echo validation
+and single-wave opencode spawns; multi-hour mode is implemented but not yet
+long-run tested. See ROADMAP.md and
+[`docs/long-run-validation-checklist.md`](docs/long-run-validation-checklist.md).
 
 ## License
 
