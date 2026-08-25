@@ -12,7 +12,9 @@ from swarm.status import format_status, format_status_json, summarize_runs
 def test_summarize_runs_groups_wave_events_and_counts_failures(tmp_path):
     run = tmp_path / "20260825-120000"
     notebook = Notebook(run)
-    notebook.log("agent-1-w120001", "dispatch", {})
+    notebook.log(
+        "agent-1-w120001", "dispatch", {"project": "validation/project-1"}
+    )
     notebook.log(
         "agent-1-w120001",
         "result",
@@ -30,7 +32,9 @@ def test_summarize_runs_groups_wave_events_and_counts_failures(tmp_path):
         {"returncode": 0, "timed_out": False, "stdout_chars": 0},
     )
     notebook.log("agent-1-w120001", "finding", {"title": "one"})
-    notebook.log("agent-2-w120001", "dispatch", {})
+    notebook.log(
+        "agent-2-w120001", "dispatch", {"project": "validation/project-2"}
+    )
     notebook.log(
         "agent-2-w120001",
         "result",
@@ -60,7 +64,7 @@ def test_status_skips_malformed_records_and_is_bounded(tmp_path):
         run = tmp_path / name
         run.mkdir()
         (run / "agent-1-w120000.jsonl").write_text(
-            '{"type":"dispatch","payload":{}}\nnot json\n',
+            '{"type":"dispatch","payload":{"project":"validation/project-1"}}\nnot json\n',
             encoding="utf-8",
         )
 
@@ -78,7 +82,9 @@ def test_status_reports_non_object_finding_payload_without_counting_finding(
 ):
     run = tmp_path / "20260825-120000"
     notebook = Notebook(run)
-    notebook.log("agent-1-w120001", "dispatch", {})
+    notebook.log(
+        "agent-1-w120001", "dispatch", {"project": "validation/project-1"}
+    )
     notebook.log(
         "agent-1-w120001",
         "result",
@@ -114,10 +120,36 @@ def test_status_reports_non_object_dispatch_payload_without_counting_dispatch(
     assert summary.contract_violations == 0
 
 
+@pytest.mark.parametrize(
+    "payload",
+    [{}, {"project": ""}, {"project": 7}, {"project": True}],
+)
+def test_status_reports_dispatch_with_invalid_required_project_without_counting_dispatch(
+    tmp_path, payload
+):
+    run = tmp_path / "20260825-120000"
+    notebook = Notebook(run)
+    notebook.log("agent-1-w120001", "dispatch", payload)
+    notebook.log(
+        "agent-1-w120001",
+        "result",
+        {"returncode": 0, "timed_out": False, "stdout_chars": 0},
+    )
+    notebook.log("agent-1-w120001", "finding", None)
+
+    summary = summarize_runs(tmp_path)[0]
+
+    assert summary.dispatches == 0
+    assert summary.malformed_records == 1
+    assert summary.contract_violations == 0
+
+
 def test_status_reports_non_object_retry_payload_without_counting_retry(tmp_path):
     run = tmp_path / "20260825-120000"
     notebook = Notebook(run)
-    notebook.log("agent-1-w120001", "dispatch", {})
+    notebook.log(
+        "agent-1-w120001", "dispatch", {"project": "validation/project-1"}
+    )
     notebook.log(
         "agent-1-w120001",
         "result",
@@ -155,7 +187,9 @@ def test_status_reports_retry_with_invalid_required_fields_without_counting_retr
 ):
     run = tmp_path / "20260825-120000"
     notebook = Notebook(run)
-    notebook.log("agent-1-w120001", "dispatch", {})
+    notebook.log(
+        "agent-1-w120001", "dispatch", {"project": "validation/project-1"}
+    )
     notebook.log(
         "agent-1-w120001",
         "result",
@@ -191,7 +225,9 @@ def test_status_reports_result_with_invalid_fields_without_counting_result(
 ):
     run = tmp_path / "20260825-120000"
     notebook = Notebook(run)
-    notebook.log("agent-1-w120001", "dispatch", {})
+    notebook.log(
+        "agent-1-w120001", "dispatch", {"project": "validation/project-1"}
+    )
     notebook.log("agent-1-w120001", "result", payload)
     notebook.log("agent-1-w120001", "finding", {"title": "recovered"})
 
@@ -238,7 +274,9 @@ def test_status_cli_does_not_require_portfolio_inventory(tmp_path, capsys):
 def test_status_json_has_versioned_run_and_wave_totals(tmp_path):
     run = tmp_path / "20260825-120000"
     notebook = Notebook(run)
-    notebook.log("agent-1-w120001", "dispatch", {})
+    notebook.log(
+        "agent-1-w120001", "dispatch", {"project": "validation/project-1"}
+    )
     notebook.log(
         "agent-1-w120001",
         "result",
@@ -302,7 +340,9 @@ def test_status_cli_json_mode_is_machine_readable(tmp_path, capsys):
 def test_status_reports_retry_events_without_changing_dispatch_count(tmp_path):
     run = tmp_path / "20260825-120000"
     notebook = Notebook(run)
-    notebook.log("agent-1-w120001", "dispatch", {})
+    notebook.log(
+        "agent-1-w120001", "dispatch", {"project": "validation/project-1"}
+    )
     notebook.log(
         "agent-1-w120001",
         "result",
@@ -335,10 +375,14 @@ def test_status_reports_retry_events_without_changing_dispatch_count(tmp_path):
 def test_status_reports_incomplete_and_invalid_retry_notebooks(tmp_path):
     run = tmp_path / "20260825-120000"
     incomplete = Notebook(run)
-    incomplete.log("agent-1-w120001", "dispatch", {})
+    incomplete.log(
+        "agent-1-w120001", "dispatch", {"project": "validation/project-1"}
+    )
 
     failed_retry = Notebook(run)
-    failed_retry.log("agent-2-w120001", "dispatch", {})
+    failed_retry.log(
+        "agent-2-w120001", "dispatch", {"project": "validation/project-2"}
+    )
     failed_retry.log(
         "agent-2-w120001",
         "result",

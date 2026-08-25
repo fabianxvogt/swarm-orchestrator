@@ -23,6 +23,11 @@
 
 ## Done
 
+- 2026-08-25: status now requires runtime `dispatch` payloads to contain a
+  non-empty string `project`, so malformed dispatches are reported and cannot
+  inflate dispatch totals or duplicate-project checks. [EMPIRICAL
+  status-contract regression]
+
 - 2026-08-25: status now validates runtime `result` fields (`returncode` as an
   integer, `timed_out` as a boolean, and non-negative integer `stdout_chars`),
   so malformed result payloads are reported and excluded from failure/output

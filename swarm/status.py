@@ -252,7 +252,7 @@ def _count_event(event: object, counter: dict[str, int]) -> None:
     event_type = event.get("type")
     payload = event.get("payload")
     if event_type == "dispatch":
-        if not isinstance(payload, dict):
+        if not _valid_dispatch_payload(payload):
             counter["malformed_records"] += 1
             return
         counter["dispatches"] += 1
@@ -296,6 +296,14 @@ def _valid_retry_payload(payload: object) -> bool:
     )
 
 
+def _valid_dispatch_payload(payload: object) -> bool:
+    """Return whether a runtime dispatch has its required project field."""
+    if not isinstance(payload, dict):
+        return False
+    project = payload.get("project")
+    return isinstance(project, str) and bool(project.strip())
+
+
 def _valid_result_payload(payload: object) -> bool:
     """Return whether a result has the runner's stable summary fields."""
     if not isinstance(payload, dict):
@@ -317,8 +325,9 @@ def _primary_project(event: dict) -> str | None:
     if event.get("type") != "dispatch":
         return None
     payload = event.get("payload")
-    project = payload.get("project") if isinstance(payload, dict) else None
-    return project if isinstance(project, str) and project else None
+    if not _valid_dispatch_payload(payload):
+        return None
+    return payload["project"]
 
 
 def _duplicate_primary_project_count(projects: list[str]) -> int:
