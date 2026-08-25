@@ -262,7 +262,7 @@ def test_status_reports_retry_with_invalid_required_fields_without_counting_retr
         {"returncode": 1, "timed_out": False, "stdout_chars": -1},
     ],
 )
-def test_status_reports_result_with_invalid_fields_without_counting_result(
+def test_status_reports_result_with_invalid_fields_without_counting_result_or_sequence(
     tmp_path, payload
 ):
     run = tmp_path / "20260825-120000"
@@ -283,7 +283,7 @@ def test_status_reports_result_with_invalid_fields_without_counting_result(
     assert summary.failures == 0
     assert summary.output_chars == 0
     assert summary.malformed_records == 1
-    assert summary.contract_violations == 0
+    assert summary.contract_violations == 1
 
 
 def test_summarize_runs_orders_numeric_collision_suffixes(tmp_path):

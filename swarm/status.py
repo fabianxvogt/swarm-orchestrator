@@ -383,7 +383,12 @@ def _contract_violations(events: list[dict]) -> int:
         return 0 if len(events) == len(dry_run_dispatches) else 1
 
     dispatches = [event for event in events if event.get("type") == "dispatch"]
-    results = [event for event in events if event.get("type") == "result"]
+    results = [
+        event
+        for event in events
+        if event.get("type") == "result"
+        and _valid_result_payload(event.get("payload"))
+    ]
     retries = [event for event in events if event.get("type") == "retry"]
     if not dispatches and not results and not retries:
         if all(event.get("type") == "provenance_blocked" for event in events):

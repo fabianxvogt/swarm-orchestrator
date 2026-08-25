@@ -36,7 +36,8 @@
 - 2026-08-25: status now validates runtime `result` fields (`returncode` as an
   integer, `timed_out` as a boolean, and non-negative integer `stdout_chars`),
   so malformed result payloads are reported and excluded from failure/output
-  totals. [EMPIRICAL status-contract regression]
+  totals and cannot satisfy the required result/finding sequence. [EMPIRICAL
+  status-contract regression]
 
 - 2026-08-25: status now validates the required `reason` and positive integer
   `attempt` fields on JSON-valid retry payloads, so incomplete or wrongly typed
