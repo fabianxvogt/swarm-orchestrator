@@ -185,3 +185,9 @@ def test_status_rejects_non_positive_limit(tmp_path, capsys):
 def test_summarize_runs_rejects_non_positive_limit(tmp_path, limit):
     with pytest.raises(ValueError, match="limit must be positive"):
         summarize_runs(tmp_path, limit=limit)
+
+
+@pytest.mark.parametrize("limit", [True, 1.5, "1", None])
+def test_summarize_runs_rejects_non_integer_limit(tmp_path, limit):
+    with pytest.raises(ValueError, match="limit must be an integer"):
+        summarize_runs(tmp_path, limit=limit)

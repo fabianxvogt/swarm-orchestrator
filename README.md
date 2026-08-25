@@ -110,7 +110,9 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
    one bounded retry; failed and timed-out responses are not retried.
 7. `swarm status --json` emits a versioned, read-only summary for scripts;
    retry counts are included, while exact provider cost remains unavailable
-   until notebooks record pricing data.
+   until notebooks record pricing data. The CLI and `summarize_runs` API require
+   a positive integer `limit`; malformed limits fail closed before notebook
+   inspection.
 8. `commit_per_finding` is opt-in and applies only to successful BUILD missions;
    it requires a clean target worktree, commits only agent changes, restores the
    index if the commit fails, and never pushes.

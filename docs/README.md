@@ -8,6 +8,8 @@ Entry point for the swarm implementation in this project.
   local preflight and owner-run evidence criteria for the remaining roadmap item
 - [`agent-wave-2026-08-25-status-ordering.md`](agent-wave-2026-08-25-status-ordering.md)
   — deterministic ordering for same-second run-directory collisions
+- [`agent-wave-2026-08-25-status-input-validation.md`](agent-wave-2026-08-25-status-input-validation.md)
+  — positive-integer validation for the status limit CLI/API contract
 - `swarm/` — implementation
 - `tests/` — verification
 

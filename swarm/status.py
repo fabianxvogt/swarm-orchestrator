@@ -67,6 +67,8 @@ class RunSummary:
 
 def summarize_runs(runs_dir: Path, limit: int = 10) -> list[RunSummary]:
     """Summarize at most ``limit`` newest run directories without mutating them."""
+    if isinstance(limit, bool) or not isinstance(limit, int):
+        raise ValueError("limit must be an integer")
     if limit < 1:
         raise ValueError("limit must be positive")
     if not runs_dir.is_dir():

@@ -23,6 +23,10 @@
 
 ## Done
 
+- 2026-08-25: the status CLI/API now reject non-integer (including boolean)
+  limits with a stable validation error before scanning run directories.
+  [EMPIRICAL observability regression]
+
 - 2026-08-25: status ordering now treats numeric same-second run-directory
   collision suffixes numerically, so bounded reports do not omit a newer
   `...-10` run in favor of `...-2`. [EMPIRICAL observability regression]
