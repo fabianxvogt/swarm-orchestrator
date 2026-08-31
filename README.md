@@ -178,6 +178,21 @@ production notebook/status schemas remain unchanged for backward compatibility.
 Accordingly, neither provider output nor the existing
 `output_tokens_estimate` can currently admit a model-backed pilot.
 
+`swarm.usage_evidence` is a separate, offline archive boundary. Its strict
+`usage-evidence/v1` envelope preserves source bytes as canonical base64 plus
+SHA-256, records CLI/binary/schema/parser provenance, represents invocation
+trees, outcomes, and coverage, and keeps observed, derived, and unknown
+quantities distinct. Canonical JSON round-trips with an envelope self-hash;
+malformed trees, unsupported derivations, stale hashes, and accidental
+corruption fail closed. The unsigned self-hash is not authentication against an
+adversary that can rewrite the envelope. Projection to `TokenUsage` additionally
+requires one successful, terminal, complete, exclusion-free invocation
+aggregate; a pinned source-schema hash; complete raw captures; and
+provider-observed inclusive input/output/total under one known basis, one
+semantics URI, and a trusted additive relation. The archived OpenCode and
+Claude Code shapes remain inadmissible. This module is not connected to the
+runner or pilot admission.
+
 ## Status
 
 Experimental / early. Verified end-to-end with bounded local echo validation

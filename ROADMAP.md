@@ -23,6 +23,18 @@
 
 ## Done
 
+- 2026-08-31: added the offline-only `usage-evidence/v1` envelope for lossless
+  base64/SHA-256 raw evidence, source/CLI/binary/schema/parser provenance,
+  invocation-tree outcomes/coverage, explicit observed/derived/unknown
+  quantities, validated acyclic relations, namespaced extensions, canonical
+  hashing, and stale-digest/corruption detection. The unsigned self-hash is not
+  adversarial authentication. Projection remains fail-closed: audited OpenCode
+  and Claude Code fixture shapes round-trip but cannot produce `TokenUsage`;
+  only one successful, complete, terminal, exclusion-free provider-authority
+  invocation aggregate with pinned semantics, complete raw capture, and a
+  trusted additive total can project. No runner or admission path is integrated.
+  [INCREMENTAL / EMPIRICAL offline evidence contract]
+
 - 2026-08-31: added an immutable, strict `TokenUsage` backend receipt and
   separate fail-closed boundaries for provider-only pilot admission and
   fixture-only preflight accounting. Missing/forged usage, failed or timed-out

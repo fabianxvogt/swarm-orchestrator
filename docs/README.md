@@ -4,6 +4,8 @@ Entry point for the swarm implementation in this project.
 
 - [`../README.md`](../README.md) — purpose and quickstart
 - [`../ROADMAP.md`](../ROADMAP.md) — current work
+- [`agent-wave-2026-08-31-token-evidence-envelope.md`](agent-wave-2026-08-31-token-evidence-envelope.md)
+  — strict offline usage-evidence archive and fail-closed projection boundary
 - [`agent-wave-2026-08-31-token-usage-preflight.md`](agent-wave-2026-08-31-token-usage-preflight.md)
   — strict unavailable/over-budget token receipt boundary with deterministic
   echo fixture accounting
