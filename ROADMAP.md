@@ -23,6 +23,22 @@
 
 ## Done
 
+- 2026-08-31: added an immutable, strict `TokenUsage` backend receipt and
+  separate fail-closed boundaries for provider-only pilot admission and
+  fixture-only preflight accounting. Missing/forged usage, failed or timed-out
+  results, non-built-in integers/strings, inconsistent totals, wrong sources,
+  and over-budget receipts are rejected. Deterministic echo units cannot admit
+  a pilot. Production notebook/status behavior is unchanged; model-backed
+  pilots remain blocked on authoritative provider usage.
+  [INCREMENTAL / PREFLIGHT accounting contract]
+
+- 2026-08-25: replaced wall-clock-only wave notebook identities with a
+  collision-free six-digit sequence persisted by the run directory. Back-to-back
+  and sequentially reconstructed five-agent waves now remain distinct; canceled
+  zero-dispatch and empty waves do not consume sequence values, and exhaustion
+  fails closed. Concurrent runners sharing one directory remain unsupported.
+  [INCREMENTAL / EMPIRICAL continuity regression]
+
 - 2026-08-25: `run_wave()` now rechecks the shutdown event after bounded
   mission assembly. A stop arriving in that narrow pre-dispatch window no
   longer creates dry-run output, submits dispatch callables, consumes mission

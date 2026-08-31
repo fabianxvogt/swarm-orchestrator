@@ -362,6 +362,21 @@ class Swarm:
         self.mission_index = 0
         self.findings: list[Finding] = []
         self._last_wave_had_jobs = False
+        self.wave_index = self._existing_wave_index()
+
+    def _existing_wave_index(self) -> int:
+        """Resume the largest six-digit wave suffix in this run directory."""
+        indexes: list[int] = []
+        for path in self.notebook.run_dir.glob("*.jsonl"):
+            _, separator, suffix = path.stem.rpartition("-w")
+            if (
+                separator
+                and len(suffix) == 6
+                and suffix.isascii()
+                and suffix.isdigit()
+            ):
+                indexes.append(int(suffix))
+        return max(indexes, default=0)
 
     def next_mission(self) -> Mission:
         guard = 0
@@ -421,7 +436,6 @@ class Swarm:
         return collected
 
     def _run_wave(self) -> tuple[int, bool]:
-        wave_id = time.strftime("%H%M%S")
         start_mission_index = self.mission_index
         jobs = self.wave(self.config.parallel)
         if STOP.is_set():
@@ -430,16 +444,35 @@ class Swarm:
             # turn that canceled scan into dry-run output or executor work.
             self.mission_index = start_mission_index
             return 0, False
+        if not jobs:
+            return 0, False
+        # A per-run sequence is collision-free even when consecutive waves
+        # start within one wall-clock second. Keep six digits so existing
+        # status readers and legacy notebook names share one contract.
+        if self.wave_index >= 999_999:
+            raise RuntimeError("wave identity exhausted for this run directory")
+        self.wave_index += 1
+        wave_id = f"{self.wave_index:06d}"
         collected = 0
         if self.dry_run:
+            logged = False
             for agent, mission in jobs:
+                if STOP.is_set():
+                    break
                 print(
                     f"[dry-run] {agent}: {mission.kind} on {mission.project}"
                     + (f" <-> {mission.partner}" if mission.partner else "")
                 )
-                self.notebook.log(agent, "dispatch_dry_run", mission.brief)
-            return 0, bool(jobs)
+                self.notebook.log(
+                    f"{agent}-w{wave_id}", "dispatch_dry_run", mission.brief
+                )
+                logged = True
+            if not logged and STOP.is_set():
+                self.mission_index = start_mission_index
+                self.wave_index -= 1
+            return 0, logged
         with ThreadPoolExecutor(max_workers=self.config.parallel) as pool:
+            accepted_dispatch = False
             futures = [
                 (
                     agent,
@@ -455,9 +488,18 @@ class Swarm:
             ]
             for _, future in futures:
                 ok, finding = future.result()
+                accepted_dispatch = accepted_dispatch or ok
                 if ok and finding is not None:
                     self.findings.append(finding)
                     collected += 1
+        dispatched = accepted_dispatch or any(
+            self.notebook.path_for(f"{agent}-w{wave_id}").exists()
+            for agent, _ in jobs
+        )
+        if not dispatched and STOP.is_set():
+            self.mission_index = start_mission_index
+            self.wave_index -= 1
+            return 0, False
         return collected, bool(jobs)
 
     def run_for_hours(self, hours: float, interval_min: float) -> int:

@@ -13,6 +13,7 @@ from swarm.missions import Mission
 from swarm.notebook import Notebook
 from swarm.registry import Project
 from swarm.orchestrator import _publish
+from swarm.status import summarize_runs
 
 FINDING_OUTPUT = """===FINDING===
 TITLE: Failed child finding
@@ -455,12 +456,162 @@ def test_run_wave_does_not_start_after_stop(monkeypatch, tmp_path, capsys, dry_r
     try:
         assert swarm.run_wave() == 0
         assert swarm.mission_index == 0
+        assert swarm.wave_index == 0
         assert swarm._last_wave_had_jobs is False
         assert dispatches == []
         assert swarm.notebook.entries() == []
         assert capsys.readouterr().out == ""
     finally:
         runner.STOP.clear()
+
+
+def test_back_to_back_waves_have_unique_notebook_identities(tmp_path):
+    workdir = tmp_path / "workdir"
+    workdir.mkdir()
+    projects = [
+        Project(path=f"validation/project-{index}", name=f"project-{index}")
+        for index in range(5)
+    ]
+    run_root = tmp_path / "runs"
+    run_dir = run_root / "20260825-120000"
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(workdir)),
+        projects,
+        Notebook(run_dir),
+    )
+
+    assert swarm.run_wave() == 0
+    assert swarm.run_wave() == 0
+
+    summary = summarize_runs(run_root, limit=1)[0]
+    assert len(list(run_dir.glob("*.jsonl"))) == 10
+    assert [wave.name for wave in summary.waves] == ["000001", "000002"]
+    assert [wave.agents for wave in summary.waves] == [5, 5]
+    assert [wave.dispatches for wave in summary.waves] == [5, 5]
+    assert [wave.retries for wave in summary.waves] == [5, 5]
+    assert summary.failures == 0
+    assert summary.malformed_records == 0
+    assert summary.contract_violations == 0
+
+
+def test_back_to_back_dry_run_waves_have_unique_notebook_identities(
+    tmp_path, capsys
+):
+    projects = [
+        Project(path=f"validation/project-{index}", name=f"project-{index}")
+        for index in range(5)
+    ]
+    run_dir = tmp_path / "run"
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
+        projects,
+        Notebook(run_dir),
+        dry_run=True,
+    )
+
+    assert swarm.run_wave() == 0
+    assert swarm.run_wave() == 0
+
+    assert len(capsys.readouterr().out.splitlines()) == 10
+    assert swarm.wave_index == 2
+    assert sorted(path.stem.rsplit("-w", 1)[1] for path in run_dir.glob("*.jsonl")) == [
+        "000001",
+    ] * 5 + ["000002"] * 5
+
+
+def test_empty_wave_does_not_consume_notebook_identity(tmp_path):
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
+        [Project(path="service-account/project", name="denied")],
+        Notebook(tmp_path / "run"),
+    )
+
+    assert swarm.run_wave() == 0
+    assert swarm.wave_index == 0
+    assert swarm.notebook.entries() == []
+
+
+def test_reconstructed_swarm_resumes_notebook_identity(tmp_path, capsys):
+    projects = [
+        Project(path=f"validation/project-{index}", name=f"project-{index}")
+        for index in range(5)
+    ]
+    run_dir = tmp_path / "run"
+    config = SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path))
+
+    first = runner.Swarm(config, projects, Notebook(run_dir), dry_run=True)
+    assert first.run_wave() == 0
+    second = runner.Swarm(config, projects, Notebook(run_dir), dry_run=True)
+    assert second.wave_index == 1
+    assert second.run_wave() == 0
+
+    assert len(capsys.readouterr().out.splitlines()) == 10
+    assert second.wave_index == 2
+    assert len(list(run_dir.glob("*-w000001.jsonl"))) == 5
+    assert len(list(run_dir.glob("*-w000002.jsonl"))) == 5
+
+
+def test_exhausted_six_digit_wave_identity_fails_closed(tmp_path):
+    notebook = Notebook(tmp_path / "run")
+    notebook.log("agent-1-w999999", "dispatch_dry_run", "legacy")
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
+        [Project(path="project", name="project")],
+        notebook,
+        dry_run=True,
+    )
+
+    with pytest.raises(RuntimeError, match="wave identity exhausted"):
+        swarm.run_wave()
+
+    assert swarm.wave_index == 999_999
+    assert len(list(notebook.run_dir.glob("*.jsonl"))) == 1
+
+
+def test_reconstruction_ignores_non_ascii_digit_suffix(tmp_path):
+    notebook = Notebook(tmp_path / "run")
+    notebook.log("foreign-w²²²²²²", "dispatch_dry_run", "outside contract")
+
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
+        [Project(path="project", name="project")],
+        notebook,
+        dry_run=True,
+    )
+
+    assert swarm.wave_index == 0
+
+
+def test_stop_before_first_dispatch_rolls_back_wave_identity(
+    monkeypatch, tmp_path
+):
+    real_dispatch = runner.dispatch
+
+    def stop_before_dispatch(*args, **kwargs):
+        runner.STOP.set()
+        return real_dispatch(*args, **kwargs)
+
+    monkeypatch.setattr(runner, "dispatch", stop_before_dispatch)
+    swarm = runner.Swarm(
+        SwarmConfig(parallel=5, backend="echo", workdir=str(tmp_path)),
+        [Project(path="project", name="project")],
+        Notebook(tmp_path / "run"),
+    )
+
+    runner.STOP.clear()
+    try:
+        assert swarm.run_wave() == 0
+        assert swarm.mission_index == 0
+        assert swarm.wave_index == 0
+        assert swarm._last_wave_had_jobs is False
+        assert swarm.notebook.entries() == []
+    finally:
+        runner.STOP.clear()
+
+    monkeypatch.setattr(runner, "dispatch", real_dispatch)
+    assert swarm.run_wave() == 0
+    assert swarm.wave_index == 1
+    assert len(list((tmp_path / "run").glob("*-w000001.jsonl"))) == 1
 
 
 @pytest.mark.parametrize("dry_run", [False, True])
@@ -491,6 +642,7 @@ def test_run_wave_aborts_if_stop_arrives_during_assembly(
     try:
         assert swarm.run_wave() == 0
         assert swarm.mission_index == 0
+        assert swarm.wave_index == 0
         assert swarm._last_wave_had_jobs is False
         assert dispatches == []
         assert swarm.notebook.entries() == []

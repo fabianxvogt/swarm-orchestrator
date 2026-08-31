@@ -4,6 +4,9 @@ Entry point for the swarm implementation in this project.
 
 - [`../README.md`](../README.md) — purpose and quickstart
 - [`../ROADMAP.md`](../ROADMAP.md) — current work
+- [`agent-wave-2026-08-31-token-usage-preflight.md`](agent-wave-2026-08-31-token-usage-preflight.md)
+  — strict unavailable/over-budget token receipt boundary with deterministic
+  echo fixture accounting
 - [`long-run-validation-checklist.md`](long-run-validation-checklist.md) — safe
   local preflight and owner-run evidence criteria for the remaining roadmap item
 - [`agent-wave-2026-08-25-status-ordering.md`](agent-wave-2026-08-25-status-ordering.md)
@@ -36,6 +39,8 @@ Entry point for the swarm implementation in this project.
 - [`agent-wave-2026-08-25-stop-run-loop-boundaries.md`](agent-wave-2026-08-25-stop-run-loop-boundaries.md)
   — rechecks STOP after assembly and verifies duration-loop accounting and
   interval-wait shutdown boundaries
+- [`agent-wave-2026-08-25-wave-identity.md`](agent-wave-2026-08-25-wave-identity.md)
+  — collision-free persisted identities for immediate and sequentially reconstructed waves
 - [`agent-wave-2026-08-25-retry-payload-validation.md`](agent-wave-2026-08-25-retry-payload-validation.md)
   — object and required-field validation for retry event payloads
 - [`agent-wave-2026-08-25-finding-payload-validation.md`](agent-wave-2026-08-25-finding-payload-validation.md)

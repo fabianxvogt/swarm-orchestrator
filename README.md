@@ -148,6 +148,11 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
    readable.
    The CLI and `summarize_runs` API require a positive integer `limit`; malformed
    limits fail closed before notebook inspection.
+   Accepted waves use a monotonic six-digit identity persisted by the run
+   directory, so immediate replacement or sequentially reconstructed waves
+   cannot merge notebooks; canceled zero-dispatch and empty waves do not consume
+   an identity, and an exhausted six-digit sequence fails closed. Concurrent
+   runners must not share one run directory.
 8. `commit_per_finding` is opt-in and applies only to successful BUILD missions;
    it requires a clean target worktree, commits only agent changes, restores the
    index if the commit fails, and never pushes.
@@ -156,6 +161,22 @@ the orchestrator parses and files into `ideas/INBOX.md` (ideas) or
    values before dispatch. CLI `--hours 0` remains one wave.
 10. Notebook agent identifiers must be single filename components, so logging
     or reading an agent notebook cannot escape its run directory.
+
+## Exact token receipts (preflight only)
+
+`swarm.backends.TokenUsage` is an immutable, strictly validated receipt for
+complete input/output token accounting. Missing usage is represented by
+`BackendResult.usage = None`, never zero. `require_pilot_token_usage()` admits
+only successful results with revalidated, exact `provider` receipts within
+budget; failed/timed-out results, forged objects, fixture units, missing usage,
+and over-budget receipts fail closed. `require_fixture_token_usage()` is the
+separate preflight-only boundary for deterministic `echo-fixture` UTF-8-byte
+units. Those units are explicitly not provider tokens and cannot admit a pilot.
+
+The production provider adapters do not yet expose authoritative usage, and
+production notebook/status schemas remain unchanged for backward compatibility.
+Accordingly, neither provider output nor the existing
+`output_tokens_estimate` can currently admit a model-backed pilot.
 
 ## Status
 
